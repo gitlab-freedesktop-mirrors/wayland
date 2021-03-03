@@ -1808,6 +1808,24 @@ _wl_display_add_socket(struct wl_display *display, struct wl_socket *s)
 	return 0;
 }
 
+
+/** Automatically pick a Wayland display socket for the clients to connect to.
+ *
+ * \param display Wayland display to which the socket should be added.
+ * \return The socket name if success. NULL if failed.
+ *
+ * This adds a Unix socket to Wayland display which can be used by clients to
+ * connect to Wayland display. The name of the socket is chosen automatically
+ * as the first available name in the sequence "wayland-0", "wayland-1",
+ * "wayland-2", ..., "wayland-32".
+ *
+ * The string returned by this function is owned by the library and should
+ * not be freed.
+ *
+ * \sa wl_display_add_socket
+ *
+ * \memberof wl_display
+ */
 WL_EXPORT const char *
 wl_display_add_socket_auto(struct wl_display *display)
 {
