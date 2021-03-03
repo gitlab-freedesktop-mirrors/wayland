@@ -97,7 +97,9 @@
       in the environment). Beginning in Wayland 1.15, implementations can
       optionally support server socket endpoints located at arbitrary
       locations in the filesystem by setting <emphasis>WAYLAND_DISPLAY</emphasis>
-      to the absolute path at which the server endpoint listens.
+      to the absolute path at which the server endpoint listens. The socket may
+      also be provided through file descriptor inheritance, in which case
+      <emphasis>WAYLAND_SOCKET</emphasis> is set.
     </para>
     <para>
       Every message is structured as 32-bit words; values are represented in the
