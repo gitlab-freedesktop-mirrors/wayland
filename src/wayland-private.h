@@ -47,6 +47,8 @@
 #define WL_SERVER_ID_START 0xff000000
 #define WL_MAP_MAX_OBJECTS 0x00f00000
 #define WL_CLOSURE_MAX_ARGS 20
+#define WL_BUFFER_DEFAULT_SIZE_POT 12
+#define WL_BUFFER_DEFAULT_MAX_SIZE (1 << WL_BUFFER_DEFAULT_SIZE_POT)
 
 /**
  * Argument types used in signatures.
@@ -120,7 +122,7 @@ void
 wl_map_for_each(struct wl_map *map, wl_iterator_func_t func, void *data);
 
 struct wl_connection *
-wl_connection_create(int fd);
+wl_connection_create(int fd, size_t max_buffer_size);
 
 int
 wl_connection_destroy(struct wl_connection *connection);
@@ -251,5 +253,9 @@ zalloc(size_t s)
 
 void
 wl_connection_close_fds_in(struct wl_connection *connection, int max);
+
+void
+wl_connection_set_max_buffer_size(struct wl_connection *connection,
+				  size_t max_buffer_size);
 
 #endif

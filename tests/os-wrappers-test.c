@@ -235,10 +235,12 @@ setup_marshal_data(struct marshal_data *data)
 	assert(socketpair(AF_UNIX,
 			  SOCK_STREAM | SOCK_CLOEXEC, 0, data->s) == 0);
 
-	data->read_connection = wl_connection_create(data->s[0]);
+	data->read_connection = wl_connection_create(data->s[0],
+						     WL_BUFFER_DEFAULT_MAX_SIZE);
 	assert(data->read_connection);
 
-	data->write_connection = wl_connection_create(data->s[1]);
+	data->write_connection = wl_connection_create(data->s[1],
+						      WL_BUFFER_DEFAULT_MAX_SIZE);
 	assert(data->write_connection);
 }
 

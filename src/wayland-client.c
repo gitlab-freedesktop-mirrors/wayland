@@ -1269,7 +1269,7 @@ wl_display_connect_to_fd(int fd)
 	 */
 	display->proxy.version = 0;
 
-	display->connection = wl_connection_create(display->fd);
+	display->connection = wl_connection_create(display->fd, 0);
 	if (display->connection == NULL)
 		goto err_connection;
 
@@ -2236,6 +2236,32 @@ wl_display_flush(struct wl_display *display)
 	pthread_mutex_unlock(&display->mutex);
 
 	return ret;
+}
+
+/** Adjust the maximum size of the client connection buffers
+ *
+ * \param display The display context object
+ * \param max_buffer_size The maximum size of the connection buffers
+ *
+ * Client buffers are unbounded by default. This function sets a limit to the
+ * size of the connection buffers.
+ *
+ * A value of 0 for \a max_buffer_size requests the buffers to be unbounded.
+ *
+ * The actual size of the connection buffers is a power of two, the requested
+ * \a max_buffer_size is therefore rounded up to the nearest power of two value.
+ *
+ * Lowering the maximum size may not take effect immediately if the current
+ * content of the buffer does not fit within the new size limit.
+ *
+ * \memberof wl_display
+ * \since 1.22.90
+ */
+WL_EXPORT void
+wl_display_set_max_buffer_size(struct wl_display *display,
+                               size_t max_buffer_size)
+{
+	wl_connection_set_max_buffer_size(display->connection, max_buffer_size);
 }
 
 /** Set the user data associated with a proxy

@@ -112,6 +112,8 @@ struct wl_display {
 
 	int terminate_efd;
 	struct wl_event_source *term_source;
+
+	size_t max_buffer_size;
 };
 
 struct wl_global {
@@ -542,7 +544,8 @@ wl_client_create(struct wl_display *display, int fd)
 				  &client->pid) != 0)
 		goto err_source;
 
-	client->connection = wl_connection_create(fd);
+	client->connection = wl_connection_create(fd, display->max_buffer_size);
+
 	if (client->connection == NULL)
 		goto err_source;
 
@@ -1172,6 +1175,7 @@ wl_display_create(void)
 
 	display->global_filter = NULL;
 	display->global_filter_data = NULL;
+	display->max_buffer_size = WL_BUFFER_DEFAULT_MAX_SIZE;
 
 	wl_array_init(&display->additional_shm_formats);
 
@@ -1578,6 +1582,37 @@ wl_display_destroy_clients(struct wl_display *display)
 		wl_log("wl_display_destroy_clients: cannot destroy all clients because "
 			   "new ones were created by destroy callbacks\n");
 	}
+}
+
+/** Sets the default maximum size for connection buffers of new clients
+ *
+ * \param display The display object
+ * \param max_buffer_size The default maximum size of the connection buffers
+ *
+ * This function sets the default size of the internal connection buffers for
+ * new clients. It doesn't change the buffer size for existing wl_client.
+ *
+ * The connection buffer size of an existing wl_client can be adjusted using
+ * wl_client_set_max_buffer_size().
+ *
+ * The actual size of the connection buffers is a power of two, the requested
+ * \a max_buffer_size is therefore rounded up to the nearest power of two value.
+ *
+ * The minimum buffer size is 4096.
+ *
+ * \sa wl_client_set_max_buffer_size
+ *
+ * \memberof wl_display
+ * \since 1.22.90
+ */
+WL_EXPORT void
+wl_display_set_default_max_buffer_size(struct wl_display *display,
+			               size_t max_buffer_size)
+{
+	if (max_buffer_size < WL_BUFFER_DEFAULT_MAX_SIZE)
+		max_buffer_size = WL_BUFFER_DEFAULT_MAX_SIZE;
+
+	display->max_buffer_size = max_buffer_size;
 }
 
 static int
@@ -2273,6 +2308,34 @@ wl_signal_emit_mutable(struct wl_signal *signal, void *data)
 
 	wl_list_remove(&cursor.link);
 	wl_list_remove(&end.link);
+}
+
+/** Adjust the maximum size of the client connection buffers
+ *
+ * \param client The client object
+ * \param max_buffer_size The maximum size of the connection buffers
+ *
+ * The actual size of the connection buffers is a power of two, the requested
+ * \a max_buffer_size is therefore rounded up to the nearest power of two value.
+ *
+ * Lowering the maximum size may not take effect immediately if the current content
+ * of the buffer does not fit within the new size limit.
+ *
+ * The minimum buffer size is 4096. The default buffers size can be set using
+ * wl_display_set_default_max_buffer_size().
+ *
+ * \sa wl_display_set_default_max_buffer_size()
+ *
+ * \memberof wl_client
+ * \since 1.22.90
+ */
+WL_EXPORT void
+wl_client_set_max_buffer_size(struct wl_client *client, size_t max_buffer_size)
+{
+	if (max_buffer_size < WL_BUFFER_DEFAULT_MAX_SIZE)
+		max_buffer_size = WL_BUFFER_DEFAULT_MAX_SIZE;
+
+	wl_connection_set_max_buffer_size(client->connection, max_buffer_size);
 }
 
 /** \cond INTERNAL */

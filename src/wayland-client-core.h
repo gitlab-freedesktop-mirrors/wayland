@@ -298,6 +298,10 @@ wl_display_read_events(struct wl_display *display);
 void
 wl_log_set_handler_client(wl_log_func_t handler);
 
+void
+wl_display_set_max_buffer_size(struct wl_display *display,
+                               size_t max_buffer_size);
+
 #ifdef  __cplusplus
 }
 #endif
