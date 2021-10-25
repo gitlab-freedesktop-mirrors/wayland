@@ -85,6 +85,8 @@ struct wl_client {
 	gid_t gid;
 	bool error;
 	struct wl_priv_signal resource_created_signal;
+	void *data;
+	wl_user_data_destroy_func_t data_dtor;
 };
 
 struct wl_display {
@@ -943,6 +945,10 @@ wl_client_destroy(struct wl_client *client)
 
 	wl_list_remove(&client->link);
 	wl_list_remove(&client->resource_created_signal.listener_list);
+
+	if (client->data_dtor)
+		client->data_dtor(client->data);
+
 	free(client);
 }
 
@@ -2467,6 +2473,46 @@ wl_client_new_object(struct wl_client *client,
 					       implementation, data, NULL);
 
 	return resource;
+}
+
+/** Set the client's user data
+ *
+ * User data is whatever the caller wants to store. Use dtor if
+ * the user data needs freeing as the very last step of destroying
+ * the client.
+ *
+ * \param client The client object
+ * \param data The user data pointer
+ * \param dtor Destroy function to be called after all resources have been
+ * destroyed and all destroy listeners have been called. Can be NULL.
+ *
+ * The argument to the destroy function is the user data pointer. If the
+ * destroy function is not NULL, it will be called even if user data is NULL.
+ *
+ * \since 1.22.90
+ * \sa wl_client_get_user_data
+ */
+WL_EXPORT void
+wl_client_set_user_data(struct wl_client *client,
+			void *data,
+			wl_user_data_destroy_func_t dtor)
+{
+	client->data = data;
+	client->data_dtor = dtor;
+}
+
+/** Get the client's user data
+ *
+ * \param client The client object
+ * \return The user data pointer
+ *
+ * \since 1.22.90
+ * \sa wl_client_set_user_data
+ */
+WL_EXPORT void *
+wl_client_get_user_data(struct wl_client *client)
+{
+	return client->data;
 }
 
 struct wl_global *

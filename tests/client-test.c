@@ -80,12 +80,21 @@ client_late_destroy_notify(struct wl_listener *l, void *data)
 	listener->late_done = true;
 }
 
+static void
+client_user_data_destroy(void *data)
+{
+	bool *user_data_destroyed = data;
+
+	*user_data_destroyed = true;
+}
+
 TEST(client_destroy_listener)
 {
 	struct wl_display *display;
 	struct wl_client *client;
 	struct wl_resource *resource;
 	struct client_destroy_listener a, b;
+	bool user_data_destroyed = false;
 	int s[2];
 
 	assert(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, s) == 0);
@@ -93,6 +102,9 @@ TEST(client_destroy_listener)
 	assert(display);
 	client = wl_client_create(display, s[0]);
 	assert(client);
+
+	wl_client_set_user_data(client, &user_data_destroyed, client_user_data_destroy);
+	assert(wl_client_get_user_data(client) == &user_data_destroyed);
 
 	resource = wl_resource_create(client, &wl_callback_interface, 1, 0);
 	assert(resource);
@@ -128,6 +140,8 @@ TEST(client_destroy_listener)
 	wl_list_remove(&a.resource_listener.link);
 	wl_list_remove(&a.late_listener.link);
 
+	assert(!user_data_destroyed);
+
 	wl_client_destroy(client);
 
 	assert(!a.done);
@@ -136,6 +150,7 @@ TEST(client_destroy_listener)
 	assert(b.done);
 	assert(b.resource_done);
 	assert(b.late_done);
+	assert(user_data_destroyed);
 
 	close(s[0]);
 	close(s[1]);
