@@ -382,14 +382,7 @@ int
 wl_connection_write(struct wl_connection *connection,
 		    const void *data, size_t count)
 {
-	if (connection->out.head - connection->out.tail +
-	    count > ARRAY_LENGTH(connection->out.data)) {
-		connection->want_flush = 1;
-		if (wl_connection_flush(connection) < 0)
-			return -1;
-	}
-
-	if (ring_buffer_put(&connection->out, data, count) < 0)
+	if (wl_connection_queue(connection, data, count) < 0)
 		return -1;
 
 	connection->want_flush = 1;
