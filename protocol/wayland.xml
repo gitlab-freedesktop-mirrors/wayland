@@ -3078,6 +3078,8 @@
 
       If the parent wl_surface object is destroyed, the sub-surface is
       unmapped.
+
+      A sub-surface never has the keyboard focus of any seat.
     </description>
 
     <request name="destroy" type="destructor">
