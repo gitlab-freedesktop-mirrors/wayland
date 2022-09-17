@@ -1344,7 +1344,7 @@ emit_event_wrappers(struct wl_list *message_list, struct interface *interface)
 }
 
 static void
-emit_enumerations(struct interface *interface)
+emit_enumerations(struct interface *interface, bool with_validators)
 {
 	struct enumeration *e;
 	struct entry *entry;
@@ -1399,6 +1399,33 @@ emit_enumerations(struct interface *interface)
                                e->uppercase_name, entry->uppercase_name,
                                entry->since);
 
+		}
+
+		if (with_validators) {
+			printf("/**\n"
+			       " * @ingroup iface_%s\n"
+			       " * Validate a %s %s value.\n"
+			       " *\n"
+			       " * @return true on success, false on error.\n"
+			       " * @ref %s_%s\n"
+			       " */\n"
+			       "static inline bool\n"
+			       "%s_%s_is_valid(uint32_t value, uint32_t version) {\n"
+			       "	switch (value) {\n",
+			       interface->name, interface->name, e->name,
+			       interface->name, e->name,
+			       interface->name, e->name);
+			wl_list_for_each(entry, &e->entry_list, link) {
+				printf("	case %s%s_%s_%s:\n"
+				       "		return version >= %d;\n",
+				       entry->value[0] == '-' ? "(uint32_t)" : "",
+				       interface->uppercase_name, e->uppercase_name,
+				       entry->uppercase_name, entry->since);
+			}
+			printf("	default:\n"
+			       "		return false;\n"
+			       "	}\n"
+			       "}\n");
 		}
 
 		printf("#endif /* %s_%s_ENUM */\n\n",
@@ -1677,7 +1704,7 @@ emit_header(struct protocol *protocol, enum side side)
 
 	wl_list_for_each_safe(i, i_next, &protocol->interface_list, link) {
 
-		emit_enumerations(i);
+		emit_enumerations(i, side == SERVER);
 
 		if (side == SERVER) {
 			emit_structs(&i->request_list, i, side);
@@ -1720,7 +1747,7 @@ emit_enum_header(struct protocol *protocol)
 	       protocol->uppercase_name);
 
 	wl_list_for_each_safe(i, i_next, &protocol->interface_list, link) {
-		emit_enumerations(i);
+		emit_enumerations(i, false);
 
 		free_interface(i);
 	}
@@ -1849,7 +1876,8 @@ emit_code(struct protocol *protocol, enum visibility vis)
 	if (protocol->copyright)
 		format_text_to_comment(protocol->copyright, true);
 
-	printf("#include <stdlib.h>\n"
+	printf("#include <stdbool.h>\n"
+	       "#include <stdlib.h>\n"
 	       "#include <stdint.h>\n"
 	       "#include \"wayland-util.h\"\n\n");
 

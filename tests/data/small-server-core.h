@@ -83,11 +83,42 @@ enum intf_A_foo {
 	 * @since 2
 	 */
 	INTF_A_FOO_THIRD = 2,
+	/**
+	 * this is a negative value
+	 * @since 2
+	 */
+	INTF_A_FOO_NEGATIVE = -1,
 };
 /**
  * @ingroup iface_intf_A
  */
 #define INTF_A_FOO_THIRD_SINCE_VERSION 2
+/**
+ * @ingroup iface_intf_A
+ */
+#define INTF_A_FOO_NEGATIVE_SINCE_VERSION 2
+/**
+ * @ingroup iface_intf_A
+ * Validate a intf_A foo value.
+ *
+ * @return true on success, false on error.
+ * @ref intf_A_foo
+ */
+static inline bool
+intf_A_foo_is_valid(uint32_t value, uint32_t version) {
+	switch (value) {
+	case INTF_A_FOO_FIRST:
+		return version >= 1;
+	case INTF_A_FOO_SECOND:
+		return version >= 1;
+	case INTF_A_FOO_THIRD:
+		return version >= 2;
+	case (uint32_t)INTF_A_FOO_NEGATIVE:
+		return version >= 2;
+	default:
+		return false;
+	}
+}
 #endif /* INTF_A_FOO_ENUM */
 
 /**

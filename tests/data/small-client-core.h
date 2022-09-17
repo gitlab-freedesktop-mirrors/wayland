@@ -80,11 +80,20 @@ enum intf_A_foo {
 	 * @since 2
 	 */
 	INTF_A_FOO_THIRD = 2,
+	/**
+	 * this is a negative value
+	 * @since 2
+	 */
+	INTF_A_FOO_NEGATIVE = -1,
 };
 /**
  * @ingroup iface_intf_A
  */
 #define INTF_A_FOO_THIRD_SINCE_VERSION 2
+/**
+ * @ingroup iface_intf_A
+ */
+#define INTF_A_FOO_NEGATIVE_SINCE_VERSION 2
 #endif /* INTF_A_FOO_ENUM */
 
 /**
