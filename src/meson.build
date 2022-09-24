@@ -65,7 +65,7 @@ if get_option('scanner')
 		version: meson.project_version(),
 		variables: [
 			'datarootdir=' + join_paths('${prefix}', get_option('datadir')),
-			'pkgdatadir=' + join_paths('${datarootdir}', meson.project_name()),
+			'pkgdatadir=' + join_paths('${pc_sysrootdir}${datarootdir}', meson.project_name()),
 			'bindir=' + join_paths('${prefix}', get_option('bindir')),
 			'wayland_scanner=${bindir}/wayland-scanner'
 		],
@@ -214,7 +214,7 @@ if get_option('libraries')
 		filebase: 'wayland-server',
 		variables: [
 			'datarootdir=' + join_paths('${prefix}', get_option('datadir')),
-			'pkgdatadir=' + join_paths('${datarootdir}', meson.project_name())
+			'pkgdatadir=' + join_paths('${pc_sysrootdir}${datarootdir}', meson.project_name())
 		]
 	)
 
@@ -253,7 +253,7 @@ if get_option('libraries')
 		filebase: 'wayland-client',
 		variables: [
 			'datarootdir=' + join_paths('${prefix}', get_option('datadir')),
-			'pkgdatadir=' + join_paths('${datarootdir}', meson.project_name())
+			'pkgdatadir=' + join_paths('${pc_sysrootdir}${datarootdir}', meson.project_name())
 		]
 	)
 
