@@ -558,20 +558,27 @@ wl_closure_init(const struct wl_message *message, uint32_t size,
 
 	count = arg_count_for_signature(message->signature);
 	if (count > WL_CLOSURE_MAX_ARGS) {
-		wl_log("too many args (%d)\n", count);
+		wl_log("too many args (%d) for %s (signature %s)\n", count,
+		       message->name, message->signature);
 		errno = EINVAL;
 		return NULL;
 	}
 
+	int size_to_allocate;
+
 	if (size) {
 		*num_arrays = wl_message_count_arrays(message);
-		closure = zalloc(sizeof *closure + size +
-				 *num_arrays * sizeof(struct wl_array));
+		size_to_allocate = sizeof *closure + size +
+				   *num_arrays * sizeof(struct wl_array);
 	} else {
-		closure = zalloc(sizeof *closure);
+		size_to_allocate = sizeof *closure;
 	}
+	closure = zalloc(size_to_allocate);
 
 	if (!closure) {
+		wl_log("could not allocate closure of size (%d) for "
+		       "%s (signature %s)\n", size_to_allocate, message->name,
+		       message->signature);
 		errno = ENOMEM;
 		return NULL;
 	}
@@ -1202,6 +1209,8 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 	return size;
 
 overflow:
+	wl_log("serialize_closure overflow for %s (signature %s)\n",
+	       message->name, message->signature);
 	errno = ERANGE;
 	return -1;
 }
@@ -1219,8 +1228,13 @@ wl_closure_send(struct wl_closure *closure, struct wl_connection *connection)
 
 	buffer_size = buffer_size_for_closure(closure);
 	buffer = zalloc(buffer_size * sizeof buffer[0]);
-	if (buffer == NULL)
+	if (buffer == NULL) {
+		wl_log("wl_closure_send error: buffer allocation failure of "
+		       "size %d\n for %s (signature %s)",
+		       buffer_size * sizeof buffer[0], closure->message->name,
+		       closure->message->signature);
 		return -1;
+	}
 
 	size = serialize_closure(closure, buffer, buffer_size);
 	if (size < 0) {
@@ -1247,8 +1261,13 @@ wl_closure_queue(struct wl_closure *closure, struct wl_connection *connection)
 
 	buffer_size = buffer_size_for_closure(closure);
 	buffer = malloc(buffer_size * sizeof buffer[0]);
-	if (buffer == NULL)
+	if (buffer == NULL) {
+		wl_log("wl_closure_queue error: buffer allocation failure of "
+		       "size %d\n for %s (signature %s)",
+		       buffer_size * sizeof buffer[0], closure->message->name,
+		       closure->message->signature);
 		return -1;
+	}
 
 	size = serialize_closure(closure, buffer, buffer_size);
 	if (size < 0) {
