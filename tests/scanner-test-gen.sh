@@ -9,6 +9,7 @@ generate() {
 generate "code" "example.xml" "example-code.c"
 generate "client-header" "example.xml" "example-client.h"
 generate "server-header" "example.xml" "example-server.h"
+generate "enum-header" "example.xml" "example-enum.h"
 
 generate "code" "small.xml" "small-code.c"
 generate "client-header" "small.xml" "small-client.h"

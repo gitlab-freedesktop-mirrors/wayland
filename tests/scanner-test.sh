@@ -53,6 +53,7 @@ verify_error() {
 generate_and_compare "code" "example.xml" "example-code.c"
 generate_and_compare "client-header" "example.xml" "example-client.h"
 generate_and_compare "server-header" "example.xml" "example-server.h"
+generate_and_compare "enum-header" "example.xml" "example-enum.h"
 
 generate_and_compare "code" "small.xml" "small-code.c"
 generate_and_compare "client-header" "small.xml" "small-client.h"
