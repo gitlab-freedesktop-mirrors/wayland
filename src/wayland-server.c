@@ -1811,6 +1811,9 @@ wl_display_add_socket_auto(struct wl_display *display)
  * The fd must be properly set to CLOEXEC and bound to a socket file
  * with both bind() and listen() already called.
  *
+ * On success, the socket fd ownership is transferred to libwayland:
+ * libwayland will close the socket when the display is destroyed.
+ *
  * \memberof wl_display
  */
 WL_EXPORT int
