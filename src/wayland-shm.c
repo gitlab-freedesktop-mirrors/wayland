@@ -445,7 +445,7 @@ wl_shm_buffer_get(struct wl_resource *resource)
 }
 
 WL_EXPORT int32_t
-wl_shm_buffer_get_stride(struct wl_shm_buffer *buffer)
+wl_shm_buffer_get_stride(const struct wl_shm_buffer *buffer)
 {
 	return buffer->stride;
 }
@@ -479,19 +479,19 @@ wl_shm_buffer_get_data(struct wl_shm_buffer *buffer)
 }
 
 WL_EXPORT uint32_t
-wl_shm_buffer_get_format(struct wl_shm_buffer *buffer)
+wl_shm_buffer_get_format(const struct wl_shm_buffer *buffer)
 {
 	return buffer->format;
 }
 
 WL_EXPORT int32_t
-wl_shm_buffer_get_width(struct wl_shm_buffer *buffer)
+wl_shm_buffer_get_width(const struct wl_shm_buffer *buffer)
 {
 	return buffer->width;
 }
 
 WL_EXPORT int32_t
-wl_shm_buffer_get_height(struct wl_shm_buffer *buffer)
+wl_shm_buffer_get_height(const struct wl_shm_buffer *buffer)
 {
 	return buffer->height;
 }
