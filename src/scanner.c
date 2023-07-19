@@ -175,7 +175,7 @@ struct interface {
 	char *name;
 	char *uppercase_name;
 	int version;
-	int since;
+	int since, deprecated_since;
 	struct wl_list request_list;
 	struct wl_list event_list;
 	struct wl_list enumeration_list;
@@ -194,7 +194,7 @@ struct message {
 	int type_index;
 	int all_null;
 	int destructor;
-	int since;
+	int since, deprecated_since;
 	struct description *description;
 };
 
@@ -234,7 +234,7 @@ struct entry {
 	char *uppercase_name;
 	char *value;
 	char *summary;
-	int since;
+	int since, deprecated_since;
 	struct wl_list link;
 	struct description *description;
 };
@@ -697,6 +697,25 @@ version_from_since(struct parse_context *ctx, const char *since)
 	return version;
 }
 
+static int
+version_from_deprecated_since(struct parse_context *ctx, const char *deprecated_since)
+{
+	int version;
+
+	if (deprecated_since == NULL)
+		return 0;
+
+	version = strtouint(deprecated_since);
+	if (version == -1) {
+		fail(&ctx->loc, "invalid integer (%s)\n", deprecated_since);
+	} else if (version > ctx->interface->version) {
+		fail(&ctx->loc, "deprecated-since (%u) larger than version (%u)\n",
+		     version, ctx->interface->version);
+	}
+
+	return version;
+}
+
 static void
 start_element(void *data, const char *element_name, const char **atts)
 {
@@ -713,6 +732,7 @@ start_element(void *data, const char *element_name, const char **atts)
 	const char *value = NULL;
 	const char *summary = NULL;
 	const char *since = NULL;
+	const char *deprecated_since = NULL;
 	const char *allow_null = NULL;
 	const char *enumeration_name = NULL;
 	const char *bitfield = NULL;
@@ -737,6 +757,8 @@ start_element(void *data, const char *element_name, const char **atts)
 			summary = atts[i + 1];
 		if (strcmp(atts[i], "since") == 0)
 			since = atts[i + 1];
+		if (strcmp(atts[i], "deprecated-since") == 0)
+			deprecated_since = atts[i + 1];
 		if (strcmp(atts[i], "allow-null") == 0)
 			allow_null = atts[i + 1];
 		if (strcmp(atts[i], "enum") == 0)
@@ -786,11 +808,17 @@ start_element(void *data, const char *element_name, const char **atts)
 			message->destructor = 1;
 
 		version = version_from_since(ctx, since);
-
 		if (version < ctx->interface->since)
 			warn(&ctx->loc, "since version not increasing\n");
 		ctx->interface->since = version;
 		message->since = version;
+
+		version = version_from_deprecated_since(ctx, deprecated_since);
+		if (version > 0 && version <= message->since)
+			fail(&ctx->loc, "deprecated-since version (%d) smaller "
+			     "or equal to since version (%u)\n",
+			     version, message->since);
+		message->deprecated_since = version;
 
 		if (strcmp(name, "destroy") == 0 && !message->destructor)
 			fail(&ctx->loc, "destroy request should be destructor type");
@@ -872,12 +900,19 @@ start_element(void *data, const char *element_name, const char **atts)
 
 		validate_identifier(&ctx->loc, name, TRAILING_IDENT);
 		entry = create_entry(name, value);
-		version = version_from_since(ctx, since);
 
+		version = version_from_since(ctx, since);
 		if (version < ctx->enumeration->since)
 			warn(&ctx->loc, "since version not increasing\n");
 		ctx->enumeration->since = version;
 		entry->since = version;
+
+		version = version_from_deprecated_since(ctx, deprecated_since);
+		if (version > 0 && version <= entry->since)
+			fail(&ctx->loc, "deprecated-since version (%d) smaller "
+			     "or equal to since version (%u)\n",
+			     version, entry->since);
+		entry->deprecated_since = version;
 
 		if (summary)
 			entry->summary = xstrdup(summary);
@@ -1380,6 +1415,9 @@ emit_enumerations(struct interface *interface, bool with_validators)
 				}
 				if (entry->since > 1)
 					printf("\t * @since %d\n", entry->since);
+				if (entry->deprecated_since > 0)
+					printf("\t * @deprecated Deprecated since version %d\n",
+					       entry->deprecated_since);
 				printf("\t */\n");
 			}
 			printf("\t%s_%s_%s = %s,\n",
@@ -1471,9 +1509,11 @@ emit_structs(struct wl_list *message_list, struct interface *interface, enum sid
 				printf("\t * @param %s %s\n", a->name,
 				       a->summary);
 		}
-		if (m->since > 1) {
+		if (m->since > 1)
 			printf("\t * @since %d\n", m->since);
-		}
+		if (m->deprecated_since > 0)
+			printf("\t * @deprecated Deprecated since version %d\n",
+			       m->deprecated_since);
 		printf("\t */\n");
 		printf("\tvoid (*%s)(", m->name);
 
