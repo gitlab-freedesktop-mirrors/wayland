@@ -68,6 +68,12 @@ extern "C" {
 #define WL_PRINTF(x, y)
 #endif
 
+#if __STDC_VERSION__ >= 202311L
+#define WL_TYPEOF(expr) typeof(expr)
+#else
+#define WL_TYPEOF(expr) __typeof__(expr)
+#endif
+
 /** \class wl_object
  *
  * \brief A protocol object.
@@ -406,8 +412,8 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  * \return The container for the specified pointer
  */
 #define wl_container_of(ptr, sample, member)				\
-	(__typeof__(sample))((char *)(ptr) -				\
-			     offsetof(__typeof__(*sample), member))
+	(WL_TYPEOF(sample))((char *)(ptr) -				\
+			     offsetof(WL_TYPEOF(*sample), member))
 
 /**
  * Iterates over a list.
