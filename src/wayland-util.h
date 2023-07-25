@@ -48,7 +48,9 @@ extern "C" {
 #endif
 
 /** Deprecated attribute */
-#if defined(__GNUC__) && __GNUC__ >= 4
+#if __STDC_VERSION__ >= 202311L
+#define WL_DEPRECATED [[deprecated]]
+#elif defined(__GNUC__) && __GNUC__ >= 4
 #define WL_DEPRECATED __attribute__ ((deprecated))
 #else
 #define WL_DEPRECATED
