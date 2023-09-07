@@ -9,19 +9,21 @@ wayland_egl = library(
 	install: true
 )
 
-wayland_egl_abi_check = executable('wayland-egl-abi-check', 'wayland-egl-abi-check.c')
-test('wayland-egl abi check', wayland_egl_abi_check)
+if get_option('tests')
+	wayland_egl_abi_check = executable('wayland-egl-abi-check', 'wayland-egl-abi-check.c')
+	test('wayland-egl abi check', wayland_egl_abi_check)
 
-nm_path = find_program('nm').full_path()
+	nm_path = find_program('nm').full_path()
 
-test(
-	'wayland-egl symbols check',
-	find_program('wayland-egl-symbols-check'),
-	env: [
-		'WAYLAND_EGL_LIB=@0@'.format(wayland_egl.full_path()),
-		'NM=@0@'.format(nm_path)
-	]
-)
+	test(
+		'wayland-egl symbols check',
+		find_program('wayland-egl-symbols-check'),
+		env: [
+			'WAYLAND_EGL_LIB=@0@'.format(wayland_egl.full_path()),
+			'NM=@0@'.format(nm_path)
+		]
+	)
+endif
 
 install_headers([
 	'wayland-egl.h',
