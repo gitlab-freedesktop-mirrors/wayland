@@ -1832,6 +1832,9 @@
 	x and y, combined with the new surface size define in which
 	directions the surface's size changes.
 
+	The exact semantics of wl_surface.offset are role-specific. Refer to
+	the documentation of specific roles for more information.
+
 	Surface location offset is double-buffered state, see
 	wl_surface.commit.
 
