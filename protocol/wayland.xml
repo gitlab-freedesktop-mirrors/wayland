@@ -3080,6 +3080,9 @@
       unmapped.
 
       A sub-surface never has the keyboard focus of any seat.
+
+      The wl_surface.offset request is ignored: clients must use set_position
+      instead to move the sub-surface.
     </description>
 
     <request name="destroy" type="destructor">
