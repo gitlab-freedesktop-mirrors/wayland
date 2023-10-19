@@ -884,7 +884,7 @@
 	The icon surface is an optional (can be NULL) surface that
 	provides an icon to be moved around with the cursor.  Initially,
 	the top-left corner of the icon surface is placed at the cursor
-	hotspot, but subsequent wl_surface.attach request can move the
+	hotspot, but subsequent wl_surface.offset requests can move the
 	relative position. Attach requests must be confirmed with
 	wl_surface.commit as usual. The icon surface is given the role of
 	a drag-and-drop icon. If the icon surface already has another role,
