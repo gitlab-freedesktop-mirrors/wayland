@@ -2757,6 +2757,10 @@
 	The geometry event will be followed by a done event (starting from
 	version 2).
 
+	Clients should use wl_surface.preferred_buffer_transform instead of the
+	transform advertised by this event to find the preferred buffer
+	transform to use for a surface.
+
 	Note: wl_output only advertises partial information about the output
 	position and identification. Some compositors, for instance those not
 	implementing a desktop-style output layout or those exposing virtual
@@ -2862,12 +2866,9 @@
 	displays where applications rendering at the native
 	resolution would be too small to be legible.
 
-	It is intended that scaling aware clients track the
-	current output of a surface, and if it is on a scaled
-	output it should use wl_surface.set_buffer_scale with
-	the scale of the output. That way the compositor can
-	avoid scaling the surface, and the client can supply
-	a higher detail image.
+	Clients should use wl_surface.preferred_buffer_scale
+	instead of this event to find the preferred buffer
+	scale to use for a surface.
 
 	The scale event will be followed by a done event.
       </description>
