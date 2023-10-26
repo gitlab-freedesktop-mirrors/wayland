@@ -626,14 +626,7 @@ wl_fixed_to_double(wl_fixed_t f)
 static inline wl_fixed_t
 wl_fixed_from_double(double d)
 {
-	union {
-		double d;
-		int64_t i;
-	} u;
-
-	u.d = d + (3LL << (51 - 8));
-
-	return (wl_fixed_t)u.i;
+	return (wl_fixed_t) (d * 256.0);
 }
 
 /**
