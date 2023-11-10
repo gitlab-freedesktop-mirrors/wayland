@@ -77,6 +77,7 @@ struct wl_event_queue {
 	struct wl_list event_list;
 	struct wl_list proxy_list; /**< struct wl_proxy::queue_link */
 	struct wl_display *display;
+	char *name;
 };
 
 struct wl_display {
@@ -220,11 +221,15 @@ display_protocol_error(struct wl_display *display, uint32_t code,
 }
 
 static void
-wl_event_queue_init(struct wl_event_queue *queue, struct wl_display *display)
+wl_event_queue_init(struct wl_event_queue *queue,
+		    struct wl_display *display,
+		    const char *name)
 {
 	wl_list_init(&queue->event_list);
 	wl_list_init(&queue->proxy_list);
 	queue->display = display;
+	if (name)
+		queue->name = strdup(name);
 }
 
 static void
@@ -305,8 +310,15 @@ wl_event_queue_release(struct wl_event_queue *queue)
 		struct wl_proxy *proxy, *tmp;
 
 		if (queue != &queue->display->default_queue) {
-			wl_log("warning: queue %p destroyed while proxies "
-			       "still attached:\n", queue);
+			if (queue->name) {
+				wl_log("warning: queue \"%s\" "
+				       "%p destroyed while proxies "
+				       "still attached:\n", queue->name, queue);
+			} else {
+				wl_log("warning: queue "
+				       "%p destroyed while proxies "
+				       "still attached:\n", queue);
+			}
 		}
 
 		wl_list_for_each_safe(proxy, tmp, &queue->proxy_list,
@@ -350,6 +362,7 @@ wl_event_queue_destroy(struct wl_event_queue *queue)
 
 	pthread_mutex_lock(&display->mutex);
 	wl_event_queue_release(queue);
+	free(queue->name);
 	free(queue);
 	pthread_mutex_unlock(&display->mutex);
 }
@@ -371,7 +384,30 @@ wl_display_create_queue(struct wl_display *display)
 	if (queue == NULL)
 		return NULL;
 
-	wl_event_queue_init(queue, display);
+	wl_event_queue_init(queue, display, NULL);
+
+	return queue;
+}
+
+/** Create a new event queue for this display and give it a name
+ *
+ * \param display The display context object
+ * \param name A human readable queue name
+ * \return A new event queue associated with this display or NULL on
+ * failure.
+ *
+ * \memberof wl_display
+ */
+WL_EXPORT struct wl_event_queue *
+wl_display_create_queue_with_name(struct wl_display *display, const char *name)
+{
+	struct wl_event_queue *queue;
+
+	queue = zalloc(sizeof *queue);
+	if (queue == NULL)
+		return NULL;
+
+	wl_event_queue_init(queue, display, name);
 
 	return queue;
 }
@@ -885,8 +921,13 @@ wl_proxy_marshal_array_flags(struct wl_proxy *proxy, uint32_t opcode,
 		goto err_unlock;
 	}
 
-	if (debug_client)
-		wl_closure_print(closure, &proxy->object, true, false, NULL);
+	if (debug_client) {
+		struct wl_event_queue *queue;
+
+		queue = wl_proxy_get_queue(proxy);
+		wl_closure_print(closure, &proxy->object, true, false, NULL,
+				 wl_event_queue_get_name(queue));
+	}
 
 	if (wl_closure_send(closure, proxy->display->connection)) {
 		wl_log("Error sending request: %s\n", strerror(errno));
@@ -1188,8 +1229,8 @@ wl_display_connect_to_fd(int fd)
 
 	display->fd = fd;
 	wl_map_init(&display->objects, WL_MAP_CLIENT_SIDE);
-	wl_event_queue_init(&display->default_queue, display);
-	wl_event_queue_init(&display->display_queue, display);
+	wl_event_queue_init(&display->default_queue, display, "Default Queue");
+	wl_event_queue_init(&display->display_queue, display, "Display Queue");
 	pthread_mutex_init(&display->mutex, NULL);
 	pthread_cond_init(&display->reader_cond, NULL);
 	display->reader_count = 0;
@@ -1321,7 +1362,9 @@ wl_display_disconnect(struct wl_display *display)
 	wl_map_for_each(&display->objects, free_zombies, NULL);
 	wl_map_release(&display->objects);
 	wl_event_queue_release(&display->default_queue);
+	free(display->default_queue.name);
 	wl_event_queue_release(&display->display_queue);
+	free(display->display_queue.name);
 	pthread_mutex_destroy(&display->mutex);
 	pthread_cond_destroy(&display->reader_cond);
 	close(display->fd);
@@ -1611,7 +1654,8 @@ dispatch_event(struct wl_display *display, struct wl_event_queue *queue)
 	proxy_destroyed = !!(proxy->flags & WL_PROXY_FLAG_DESTROYED);
 	if (proxy_destroyed) {
 		if (debug_client)
-			wl_closure_print(closure, &proxy->object, false, true, id_from_object);
+			wl_closure_print(closure, &proxy->object, false, true,
+					 id_from_object, queue->name);
 		destroy_queued_closure(closure);
 		return;
 	}
@@ -1620,13 +1664,15 @@ dispatch_event(struct wl_display *display, struct wl_event_queue *queue)
 
 	if (proxy->dispatcher) {
 		if (debug_client)
-			wl_closure_print(closure, &proxy->object, false, false, id_from_object);
+			wl_closure_print(closure, &proxy->object, false, false,
+			                 id_from_object, queue->name);
 
 		wl_closure_dispatch(closure, proxy->dispatcher,
 				    &proxy->object, opcode);
 	} else if (proxy->object.implementation) {
 		if (debug_client)
-			wl_closure_print(closure, &proxy->object, false, false, id_from_object);
+			wl_closure_print(closure, &proxy->object, false, false,
+					 id_from_object, queue->name);
 
 		wl_closure_invoke(closure, WL_CLOSURE_INVOKE_CLIENT,
 				  &proxy->object, opcode, proxy->user_data);
@@ -2397,6 +2443,34 @@ wl_proxy_set_queue(struct wl_proxy *proxy, struct wl_event_queue *queue)
 	wl_list_insert(&proxy->queue->proxy_list, &proxy->queue_link);
 
 	pthread_mutex_unlock(&proxy->display->mutex);
+}
+
+/** Get a proxy's event queue
+ *
+ * \param proxy The proxy to query
+ *
+ * Return the event queue
+ */
+WL_EXPORT struct wl_event_queue *
+wl_proxy_get_queue(const struct wl_proxy *proxy)
+{
+	return proxy->queue;
+
+}
+/** Get the name of an event queue
+ *
+ * \param queue The queue to query
+ *
+ * Return the human readable name for the event queue
+ *
+ * This may be NULL if no name has been set.
+ *
+ * \memberof wl_proxy
+ */
+WL_EXPORT const char *
+wl_event_queue_get_name(const struct wl_event_queue *queue)
+{
+	return queue->name;
 }
 
 /** Create a proxy wrapper for making queue assignments thread-safe

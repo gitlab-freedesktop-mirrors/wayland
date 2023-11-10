@@ -225,6 +225,12 @@ wl_proxy_get_display(struct wl_proxy *proxy);
 void
 wl_proxy_set_queue(struct wl_proxy *proxy, struct wl_event_queue *queue);
 
+struct wl_event_queue *
+wl_proxy_get_queue(const struct wl_proxy *proxy);
+
+const char *
+wl_event_queue_get_name(const struct wl_event_queue *queue);
+
 struct wl_display *
 wl_display_connect(const char *name);
 
@@ -271,6 +277,10 @@ wl_display_roundtrip(struct wl_display *display);
 
 struct wl_event_queue *
 wl_display_create_queue(struct wl_display *display);
+
+struct wl_event_queue *
+wl_display_create_queue_with_name(struct wl_display *display,
+				  const char *name);
 
 int
 wl_display_prepare_read_queue(struct wl_display *display,

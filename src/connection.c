@@ -1283,7 +1283,8 @@ wl_closure_queue(struct wl_closure *closure, struct wl_connection *connection)
 
 void
 wl_closure_print(struct wl_closure *closure, struct wl_object *target,
-		 int send, int discarded, uint32_t (*n_parse)(union wl_argument *arg))
+		 int send, int discarded, uint32_t (*n_parse)(union wl_argument *arg),
+		 const char *queue_name)
 {
 	int i;
 	struct argument_details arg;
@@ -1302,8 +1303,12 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 	clock_gettime(CLOCK_REALTIME, &tp);
 	time = (tp.tv_sec * 1000000L) + (tp.tv_nsec / 1000);
 
-	fprintf(f, "[%7u.%03u] %s%s%s#%u.%s(",
-		time / 1000, time % 1000,
+	fprintf(f, "[%7u.%03u] ", time / 1000, time % 1000);
+
+	if (queue_name)
+		fprintf(f, "{%s} ", queue_name);
+
+	fprintf(f, "%s%s%s#%u.%s(",
 		discarded ? "discarded " : "",
 		send ? " -> " : "",
 		target->interface->name, target->id,

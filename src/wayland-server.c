@@ -157,7 +157,7 @@ log_closure(struct wl_resource *resource,
 	struct wl_protocol_logger_message message;
 
 	if (debug_server)
-		wl_closure_print(closure, object, send, false, NULL);
+		wl_closure_print(closure, object, send, false, NULL, NULL);
 
 	if (!wl_list_empty(&display->protocol_loggers)) {
 		message.resource = resource;
