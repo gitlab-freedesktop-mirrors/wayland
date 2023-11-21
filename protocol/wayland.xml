@@ -212,7 +212,7 @@
     </request>
   </interface>
 
-  <interface name="wl_shm_pool" version="1">
+  <interface name="wl_shm_pool" version="2">
     <description summary="a shared memory pool">
       The wl_shm_pool object encapsulates a piece of memory shared
       between the compositor and client.  Through the wl_shm_pool
@@ -272,7 +272,7 @@
     </request>
   </interface>
 
-  <interface name="wl_shm" version="1">
+  <interface name="wl_shm" version="2">
     <description summary="shared memory support">
       A singleton global object that provides support for shared
       memory.
@@ -457,6 +457,17 @@
       </description>
       <arg name="format" type="uint" enum="format" summary="buffer pixel format"/>
     </event>
+
+    <!-- Version 2 additions -->
+
+    <request name="release" type="destructor" since="2">
+      <description summary="release the shm object">
+	Using this request a client can tell the server that it is not going to
+	use the shm object anymore.
+
+	Objects created via this interface remain unaffected.
+      </description>
+    </request>
   </interface>
 
   <interface name="wl_buffer" version="1">
