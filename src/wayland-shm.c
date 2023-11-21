@@ -382,8 +382,15 @@ err_close:
 	close(fd);
 }
 
+static void
+shm_release(struct wl_client *client, struct wl_resource *resource)
+{
+	wl_resource_destroy(resource);
+}
+
 static const struct wl_shm_interface shm_interface = {
-	shm_create_pool
+	shm_create_pool,
+	shm_release,
 };
 
 static void
@@ -414,7 +421,7 @@ bind_shm(struct wl_client *client,
 WL_EXPORT int
 wl_display_init_shm(struct wl_display *display)
 {
-	if (!wl_global_create(display, &wl_shm_interface, 1, NULL, bind_shm))
+	if (!wl_global_create(display, &wl_shm_interface, 2, NULL, bind_shm))
 		return -1;
 
 	return 0;
