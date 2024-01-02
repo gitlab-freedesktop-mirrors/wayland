@@ -1749,11 +1749,11 @@
 	a buffer that is larger (by a factor of scale in each dimension)
 	than the desired surface size.
 
-	If scale is not positive the invalid_scale protocol error is
+	If scale is not greater than 0 the invalid_scale protocol error is
 	raised.
       </description>
       <arg name="scale" type="int"
-	   summary="positive scale for interpreting buffer contents"/>
+	   summary="scale for interpreting buffer contents"/>
     </request>
 
     <!-- Version 4 additions -->
@@ -1833,6 +1833,8 @@
 	content and use wl_surface.set_buffer_scale to indicate the scale they
 	have rendered with. This allows clients to supply a higher detail
 	buffer.
+
+	The compositor shall emit a scale value greater than 0.
       </description>
       <arg name="factor" type="int" summary="preferred scaling factor"/>
     </event>
@@ -2838,8 +2840,9 @@
 	This event contains scaling geometry information
 	that is not in the geometry event. It may be sent after
 	binding the output object or if the output scale changes
-	later. If it is not sent, the client should assume a
-	scale of 1.
+	later. The compositor will emit a non-zero, positive
+	value for scale. If it is not sent, the client should
+	assume a scale of 1.
 
 	A scale larger than 1 means that the compositor will
 	automatically scale surface buffers by this amount
