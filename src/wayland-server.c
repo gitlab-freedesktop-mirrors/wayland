@@ -933,6 +933,18 @@ wl_client_get_destroy_late_listener(struct wl_client *client,
 WL_EXPORT void
 wl_client_destroy(struct wl_client *client)
 {
+
+	/* wl_client_destroy() should not be called twice for the same client. */
+	if (wl_list_empty(&client->link)) {
+		client->error = 1;
+		wl_log("wl_client_destroy: encountered re-entrant client destruction.\n");
+		return;
+	}
+
+	wl_list_remove(&client->link);
+	/* Keep the client link safe to inspect. */
+	wl_list_init(&client->link);
+
 	wl_priv_signal_final_emit(&client->destroy_signal, client);
 
 	wl_client_flush(client);
@@ -943,7 +955,6 @@ wl_client_destroy(struct wl_client *client)
 
 	wl_priv_signal_final_emit(&client->destroy_late_signal, client);
 
-	wl_list_remove(&client->link);
 	wl_list_remove(&client->resource_created_signal.listener_list);
 
 	if (client->data_dtor)
