@@ -717,10 +717,23 @@ resource_is_deprecated(struct wl_resource *resource)
 	return false;
 }
 
+/** Removes the wl_resource from the client's object map and deletes it.
+ *
+ * Triggers the destroy signal and destructor for the resource before
+ * removing it from the client's object map and releasing the resource's
+ * memory.
+ *
+ * This order is important to ensure listeners and destruction code can
+ * find the resource before it has been destroyed whilst ensuring the
+ * resource is not accessible via the object map after memory has been
+ * freed.
+ */
 static enum wl_iterator_result
-destroy_resource(void *element, void *data, uint32_t flags)
+remove_and_destroy_resource(void *element, void *data, uint32_t flags)
 {
 	struct wl_resource *resource = element;
+	struct wl_client *client = resource->client;
+	uint32_t id = resource->object.id;;
 
 	wl_signal_emit(&resource->deprecated_destroy_signal, resource);
 	/* Don't emit the new signal for deprecated resources, as that would
@@ -730,6 +743,17 @@ destroy_resource(void *element, void *data, uint32_t flags)
 
 	if (resource->destroy)
 		resource->destroy(resource);
+
+	/* The resource should be cleared from the map before memory is freed. */
+	if (id < WL_SERVER_ID_START) {
+		if (client->display_resource) {
+			wl_resource_queue_event(client->display_resource,
+						WL_DISPLAY_DELETE_ID, id);
+		}
+		wl_map_insert_at(&client->objects, 0, id, NULL);
+	} else {
+		wl_map_remove(&client->objects, id);
+	}
 
 	if (!(flags & WL_MAP_ENTRY_LEGACY))
 		free(resource);
@@ -741,22 +765,9 @@ WL_EXPORT void
 wl_resource_destroy(struct wl_resource *resource)
 {
 	struct wl_client *client = resource->client;
-	uint32_t id;
-	uint32_t flags;
+	uint32_t flags = wl_map_lookup_flags(&client->objects, resource->object.id);
 
-	id = resource->object.id;
-	flags = wl_map_lookup_flags(&client->objects, id);
-	destroy_resource(resource, NULL, flags);
-
-	if (id < WL_SERVER_ID_START) {
-		if (client->display_resource) {
-			wl_resource_queue_event(client->display_resource,
-						WL_DISPLAY_DELETE_ID, id);
-		}
-		wl_map_insert_at(&client->objects, 0, id, NULL);
-	} else {
-		wl_map_remove(&client->objects, id);
-	}
+	remove_and_destroy_resource(resource, NULL, flags);
 }
 
 WL_EXPORT uint32_t
@@ -920,12 +931,10 @@ wl_client_get_destroy_late_listener(struct wl_client *client,
 WL_EXPORT void
 wl_client_destroy(struct wl_client *client)
 {
-	uint32_t serial = 0;
-
 	wl_priv_signal_final_emit(&client->destroy_signal, client);
 
 	wl_client_flush(client);
-	wl_map_for_each(&client->objects, destroy_resource, &serial);
+	wl_map_for_each(&client->objects, remove_and_destroy_resource, NULL);
 	wl_map_release(&client->objects);
 	wl_event_source_remove(client->source);
 	close(wl_connection_destroy(client->connection));
