@@ -75,15 +75,23 @@ endif
 sed_path = find_program('sed').full_path()
 
 if get_option('scanner')
+	scanner_test_env = [
+		'TEST_DATA_DIR=@0@/data'.format(meson.current_source_dir()),
+		'TEST_OUTPUT_DIR=@0@/output'.format(meson.current_build_dir()),
+		'SED=@0@'.format(sed_path),
+		'WAYLAND_SCANNER=@0@'.format(wayland_scanner.full_path()),
+	]
+
 	test(
 		'scanner-test',
 		find_program('scanner-test.sh'),
-		env: [
-			'TEST_DATA_DIR=@0@/data'.format(meson.current_source_dir()),
-			'TEST_OUTPUT_DIR=@0@/output'.format(meson.current_build_dir()),
-			'SED=@0@'.format(sed_path),
-			'WAYLAND_SCANNER=@0@'.format(wayland_scanner.full_path()),
-		],
+		env: scanner_test_env,
+	)
+
+	run_target(
+		'gen-scanner-test',
+		command: find_program('scanner-test-gen.sh'),
+		env: scanner_test_env,
 	)
 endif
 
