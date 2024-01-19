@@ -111,7 +111,11 @@ int
 wl_os_socket_peercred(int sockfd, uid_t *uid, gid_t *gid, pid_t *pid)
 {
 	socklen_t len;
+#if defined(__OpenBSD__)
+	struct sockpeercred ucred;
+#else
 	struct ucred ucred;
+#endif
 
 	len = sizeof(ucred);
 	if (getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) < 0)
