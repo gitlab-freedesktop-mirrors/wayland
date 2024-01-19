@@ -1512,8 +1512,9 @@
 	mutates the underlying buffer storage, the surface contents become
 	undefined immediately.
 
-	If wl_surface.attach is sent with a NULL wl_buffer, the
-	following wl_surface.commit will remove the surface content.
+	If wl_surface.attach is sent with a NULL wl_buffer, or the pending
+	wl_buffer has been destroyed, the following wl_surface.commit will
+	remove the surface content.
       </description>
       <arg name="buffer" type="object" interface="wl_buffer" allow-null="true"
 	   summary="buffer of surface contents"/>
