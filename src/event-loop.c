@@ -42,6 +42,7 @@
 #include "wayland-util.h"
 #include "wayland-private.h"
 #include "wayland-server-core.h"
+#include "wayland-server-private.h"
 #include "wayland-os.h"
 
 /** \cond INTERNAL */
@@ -73,7 +74,7 @@ struct wl_event_loop {
 	struct wl_list idle_list;
 	struct wl_list destroy_list;
 
-	struct wl_signal destroy_signal;
+	struct wl_priv_signal destroy_signal;
 
 	struct wl_timer_heap timers;
 };
@@ -898,7 +899,7 @@ wl_event_loop_create(void)
 	wl_list_init(&loop->idle_list);
 	wl_list_init(&loop->destroy_list);
 
-	wl_signal_init(&loop->destroy_signal);
+	wl_priv_signal_init(&loop->destroy_signal);
 
 	wl_timer_heap_init(&loop->timers, loop);
 
@@ -921,7 +922,7 @@ wl_event_loop_create(void)
 WL_EXPORT void
 wl_event_loop_destroy(struct wl_event_loop *loop)
 {
-	wl_signal_emit(&loop->destroy_signal, loop);
+	wl_priv_signal_final_emit(&loop->destroy_signal, loop);
 
 	wl_event_loop_process_destroy_list(loop);
 	wl_timer_heap_release(&loop->timers);
@@ -1147,7 +1148,7 @@ WL_EXPORT void
 wl_event_loop_add_destroy_listener(struct wl_event_loop *loop,
 				   struct wl_listener *listener)
 {
-	wl_signal_add(&loop->destroy_signal, listener);
+	wl_priv_signal_add(&loop->destroy_signal, listener);
 }
 
 /** Get the listener struct for the specified callback
@@ -1163,5 +1164,5 @@ WL_EXPORT struct wl_listener *
 wl_event_loop_get_destroy_listener(struct wl_event_loop *loop,
 				   wl_notify_func_t notify)
 {
-	return wl_signal_get(&loop->destroy_signal, notify);
+	return wl_priv_signal_get(&loop->destroy_signal, notify);
 }
