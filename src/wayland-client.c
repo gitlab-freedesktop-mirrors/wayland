@@ -2081,6 +2081,15 @@ wl_display_dispatch_queue_timeout(struct wl_display *display,
 	return ret;
 }
 
+WL_EXPORT int
+wl_display_dispatch_timeout(struct wl_display *display,
+			    const struct timespec *timeout)
+{
+	return wl_display_dispatch_queue_timeout(display,
+						 &display->default_queue,
+						 timeout);
+}
+
 /** Dispatch events in an event queue
  *
  * \param display The display context object

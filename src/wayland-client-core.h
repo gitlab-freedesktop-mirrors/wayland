@@ -252,6 +252,10 @@ wl_display_dispatch_queue(struct wl_display *display,
 			  struct wl_event_queue *queue);
 
 int
+wl_display_dispatch_timeout(struct wl_display *display,
+			    const struct timespec *timeout);
+
+int
 wl_display_dispatch_queue_timeout(struct wl_display *display,
 				  struct wl_event_queue *queue,
 				  const struct timespec *timeout);
