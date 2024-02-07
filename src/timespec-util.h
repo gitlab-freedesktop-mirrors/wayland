@@ -256,4 +256,38 @@ millihz_to_nsec(uint32_t mhz)
 	return 1000000000000LL / mhz;
 }
 
+/**
+ * Checks whether a timespec value is after another
+ *
+ * \param a[in] timespec to compare
+ * \param b[in] timespec to compare
+ * \return whether a is after b
+ */
+static inline bool
+timespec_after(const struct timespec *a, const struct timespec *b)
+{
+	return (a->tv_sec == b->tv_sec) ?
+	       (a->tv_nsec > b->tv_nsec) :
+	       (a->tv_sec > b->tv_sec);
+}
+
+/**
+ * Add timespecs
+ *
+ * \param r[out] result: a + b
+ * \param a[in] operand
+ * \param b[in] operand
+ */
+static inline void
+timespec_add(struct timespec *r,
+             const struct timespec *a, const struct timespec *b)
+{
+	r->tv_sec = a->tv_sec + b->tv_sec;
+	r->tv_nsec = a->tv_nsec + b->tv_nsec;
+	if (r->tv_nsec > NSEC_PER_SEC) {
+		r->tv_sec++;
+		r->tv_nsec -= NSEC_PER_SEC;
+	}
+}
+
 #endif /* TIMESPEC_UTIL_H */
