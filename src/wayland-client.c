@@ -45,6 +45,7 @@
 #include "wayland-os.h"
 #include "wayland-client.h"
 #include "wayland-private.h"
+#include "timespec-util.h"
 
 /** \cond */
 
@@ -1953,16 +1954,129 @@ wl_display_cancel_read(struct wl_display *display)
 }
 
 static int
-wl_display_poll(struct wl_display *display, short int events)
+wl_display_poll(struct wl_display *display,
+		short int events,
+		const struct timespec *timeout)
 {
 	int ret;
 	struct pollfd pfd[1];
+	struct timespec now;
+	struct timespec deadline = {0};
+	struct timespec result;
+	struct timespec *remaining_timeout = NULL;
+
+	if (timeout) {
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		timespec_add(&deadline, &now, timeout);
+	}
 
 	pfd[0].fd = display->fd;
 	pfd[0].events = events;
 	do {
-		ret = poll(pfd, 1, -1);
+		if (timeout) {
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			timespec_sub_saturate(&result, &deadline, &now);
+			remaining_timeout = &result;
+		}
+		ret = ppoll(pfd, 1, remaining_timeout, NULL);
 	} while (ret == -1 && errno == EINTR);
+
+	return ret;
+}
+
+/** Dispatch events in an event queue with a timeout
+ *
+ * \param display The display context object
+ * \param queue The event queue to dispatch
+ * \param timeout A timeout describing how long the call should block trying to
+ * dispatch events
+ * \return The number of dispatched events on success, -1 on failure
+ *
+ * This function behaves identical to wl_display_dispatch_queue() except
+ * that it also takes a timeout and returns 0 if the timeout elapsed.
+ *
+ * Passing NULL as a timeout means an infinite timeout. An empty timespec
+ * causes wl_display_dispatch_queue_timeout() to return immediately even if no
+ * events have been dispatched.
+ *
+ * If a timeout is passed to wl_display_dispatch_queue_timeout() it is updated
+ * to the remaining time.
+ *
+ * \sa wl_display_dispatch_queue()
+ *
+ * \memberof wl_display
+ */
+WL_EXPORT int
+wl_display_dispatch_queue_timeout(struct wl_display *display,
+				  struct wl_event_queue *queue,
+				  const struct timespec *timeout)
+{
+	int ret;
+	struct timespec now;
+	struct timespec deadline = {0};
+	struct timespec result;
+	struct timespec *remaining_timeout = NULL;
+
+	if (timeout) {
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		timespec_add(&deadline, &now, timeout);
+	}
+
+	if (wl_display_prepare_read_queue(display, queue) == -1)
+		return wl_display_dispatch_queue_pending(display, queue);
+
+	while (true) {
+		ret = wl_display_flush(display);
+
+		if (ret != -1 || errno != EAGAIN)
+			break;
+
+		if (timeout) {
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			timespec_sub_saturate(&result, &deadline, &now);
+			remaining_timeout = &result;
+		}
+		ret = wl_display_poll(display, POLLOUT, remaining_timeout);
+
+		if (ret <= 0) {
+			wl_display_cancel_read(display);
+			return ret;
+		}
+	}
+
+	/* Don't stop if flushing hits an EPIPE; continue so we can read any
+	 * protocol error that may have triggered it. */
+	if (ret < 0 && errno != EPIPE) {
+		wl_display_cancel_read(display);
+		return -1;
+	}
+
+	while (true) {
+		if (timeout) {
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			timespec_sub_saturate(&result, &deadline, &now);
+			remaining_timeout = &result;
+		}
+
+		ret = wl_display_poll(display, POLLIN, remaining_timeout);
+		if (ret <= 0) {
+			wl_display_cancel_read(display);
+			break;
+		}
+
+		ret = wl_display_read_events(display);
+		if (ret == -1)
+			break;
+
+		ret = wl_display_dispatch_queue_pending(display, queue);
+		if (ret != 0)
+			break;
+
+		/* We managed to read data from the display but there is no
+		 * complete event to dispatch yet. Try reading again. */
+		if (wl_display_prepare_read_queue(display, queue) == -1)
+			return wl_display_dispatch_queue_pending(display, queue);
+	}
 
 	return ret;
 }
@@ -1998,8 +2112,8 @@ wl_display_poll(struct wl_display *display, short int events)
  * \note Since Wayland 1.5 the display has an extra queue
  * for its own events (i. e. delete_id). This queue is dispatched always,
  * no matter what queue we passed as an argument to this function.
- * That means that this function can return non-0 value even when it
- * haven't dispatched any event for the given queue.
+ * That means that this function can return even when it has not dispatched any
+ * event for the given queue.
  *
  * \sa wl_display_dispatch(), wl_display_dispatch_pending(),
  * wl_display_dispatch_queue_pending(), wl_display_prepare_read_queue()
@@ -2012,37 +2126,10 @@ wl_display_dispatch_queue(struct wl_display *display,
 {
 	int ret;
 
-	if (wl_display_prepare_read_queue(display, queue) == -1)
-		return wl_display_dispatch_queue_pending(display, queue);
+	ret = wl_display_dispatch_queue_timeout(display, queue, NULL);
+	assert(ret == -1 || ret > 0);
 
-	while (true) {
-		ret = wl_display_flush(display);
-
-		if (ret != -1 || errno != EAGAIN)
-			break;
-
-		if (wl_display_poll(display, POLLOUT) == -1) {
-			wl_display_cancel_read(display);
-			return -1;
-		}
-	}
-
-	/* Don't stop if flushing hits an EPIPE; continue so we can read any
-	 * protocol error that may have triggered it. */
-	if (ret < 0 && errno != EPIPE) {
-		wl_display_cancel_read(display);
-		return -1;
-	}
-
-	if (wl_display_poll(display, POLLIN) == -1) {
-		wl_display_cancel_read(display);
-		return -1;
-	}
-
-	if (wl_display_read_events(display) == -1)
-		return -1;
-
-	return wl_display_dispatch_queue_pending(display, queue);
+	return ret;
 }
 
 /** Dispatch pending events in an event queue

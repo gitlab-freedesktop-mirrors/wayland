@@ -27,6 +27,7 @@
 #define WAYLAND_CLIENT_CORE_H
 
 #include <stdint.h>
+#include <time.h>
 #include "wayland-util.h"
 #include "wayland-version.h"
 
@@ -249,6 +250,11 @@ wl_display_dispatch(struct wl_display *display);
 int
 wl_display_dispatch_queue(struct wl_display *display,
 			  struct wl_event_queue *queue);
+
+int
+wl_display_dispatch_queue_timeout(struct wl_display *display,
+				  struct wl_event_queue *queue,
+				  const struct timespec *timeout);
 
 int
 wl_display_dispatch_queue_pending(struct wl_display *display,
