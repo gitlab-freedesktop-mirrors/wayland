@@ -191,8 +191,8 @@ verify_objects(struct wl_resource *resource, uint32_t opcode,
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 		switch (arg.type) {
-		case 'n':
-		case 'o':
+		case WL_ARG_NEW_ID:
+		case WL_ARG_OBJECT:
 			res = (struct wl_resource *) (args[i].o);
 			if (res && res->client != resource->client) {
 				wl_log("compositor bug: The compositor "
@@ -202,6 +202,8 @@ verify_objects(struct wl_resource *resource, uint32_t opcode,
 				       object->interface->events[opcode].name);
 				return false;
 			}
+		default:
+			break;
 		}
 	}
 	return true;

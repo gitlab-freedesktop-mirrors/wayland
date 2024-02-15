@@ -258,8 +258,8 @@ validate_closure_objects(struct wl_closure *closure)
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 		switch (arg.type) {
-		case 'n':
-		case 'o':
+		case WL_ARG_NEW_ID:
+		case WL_ARG_OBJECT:
 			proxy = (struct wl_proxy *) closure->args[i].o;
 			if (proxy && proxy->flags & WL_PROXY_FLAG_DESTROYED)
 				closure->args[i].o = NULL;
@@ -286,8 +286,8 @@ destroy_queued_closure(struct wl_closure *closure)
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 		switch (arg.type) {
-		case 'n':
-		case 'o':
+		case WL_ARG_NEW_ID:
+		case WL_ARG_OBJECT:
 			proxy = (struct wl_proxy *) closure->args[i].o;
 			if (proxy)
 				wl_proxy_unref(proxy);
@@ -421,7 +421,7 @@ message_count_fds(const char *signature)
 	count = arg_count_for_signature(signature);
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
-		if (arg.type == 'h')
+		if (arg.type == WL_ARG_FD)
 			fds++;
 	}
 
@@ -735,12 +735,14 @@ create_outgoing_proxy(struct wl_proxy *proxy, const struct wl_message *message,
 		signature = get_next_argument(signature, &arg);
 
 		switch (arg.type) {
-		case 'n':
+		case WL_ARG_NEW_ID:
 			new_proxy = proxy_create(proxy, interface, version);
 			if (new_proxy == NULL)
 				return NULL;
 
 			args[i].o = &new_proxy->object;
+			break;
+		default:
 			break;
 		}
 	}
@@ -1490,7 +1492,7 @@ create_proxies(struct wl_proxy *sender, struct wl_closure *closure)
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 		switch (arg.type) {
-		case 'n':
+		case WL_ARG_NEW_ID:
 			id = closure->args[i].n;
 			if (id == 0) {
 				closure->args[i].o = NULL;
@@ -1523,8 +1525,8 @@ increase_closure_args_refcount(struct wl_closure *closure)
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 		switch (arg.type) {
-		case 'n':
-		case 'o':
+		case WL_ARG_NEW_ID:
+		case WL_ARG_OBJECT:
 			proxy = (struct wl_proxy *) closure->args[i].o;
 			if (proxy)
 				proxy->refcount++;

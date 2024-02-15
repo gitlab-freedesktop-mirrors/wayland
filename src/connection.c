@@ -441,14 +441,14 @@ get_next_argument(const char *signature, struct argument_details *details)
 	details->nullable = 0;
 	for(; *signature; ++signature) {
 		switch(*signature) {
-		case 'i':
-		case 'u':
-		case 'f':
-		case 's':
-		case 'o':
-		case 'n':
-		case 'a':
-		case 'h':
+		case WL_ARG_INT:
+		case WL_ARG_UINT:
+		case WL_ARG_FIXED:
+		case WL_ARG_STRING:
+		case WL_ARG_OBJECT:
+		case WL_ARG_NEW_ID:
+		case WL_ARG_ARRAY:
+		case WL_ARG_FD:
 			details->type = *signature;
 			return signature + 1;
 		case '?':
@@ -465,14 +465,14 @@ arg_count_for_signature(const char *signature)
 	int count = 0;
 	for(; *signature; ++signature) {
 		switch(*signature) {
-		case 'i':
-		case 'u':
-		case 'f':
-		case 's':
-		case 'o':
-		case 'n':
-		case 'a':
-		case 'h':
+		case WL_ARG_INT:
+		case WL_ARG_UINT:
+		case WL_ARG_FIXED:
+		case WL_ARG_STRING:
+		case WL_ARG_OBJECT:
+		case WL_ARG_NEW_ID:
+		case WL_ARG_ARRAY:
+		case WL_ARG_FD:
 			++count;
 		}
 	}
@@ -505,32 +505,30 @@ wl_argument_from_va_list(const char *signature, union wl_argument *args,
 		sig_iter = get_next_argument(sig_iter, &arg);
 
 		switch(arg.type) {
-		case 'i':
+		case WL_ARG_INT:
 			args[i].i = va_arg(ap, int32_t);
 			break;
-		case 'u':
+		case WL_ARG_UINT:
 			args[i].u = va_arg(ap, uint32_t);
 			break;
-		case 'f':
+		case WL_ARG_FIXED:
 			args[i].f = va_arg(ap, wl_fixed_t);
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			args[i].s = va_arg(ap, const char *);
 			break;
-		case 'o':
+		case WL_ARG_OBJECT:
 			args[i].o = va_arg(ap, struct wl_object *);
 			break;
-		case 'n':
+		case WL_ARG_NEW_ID:
 			args[i].o = va_arg(ap, struct wl_object *);
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			args[i].a = va_arg(ap, struct wl_array *);
 			break;
-		case 'h':
+		case WL_ARG_FD:
 			args[i].h = va_arg(ap, int32_t);
 			break;
-		case '\0':
-			return;
 		}
 	}
 }
@@ -544,7 +542,7 @@ wl_closure_clear_fds(struct wl_closure *closure)
 
 	for (i = 0; i < closure->count; i++) {
 		signature = get_next_argument(signature, &arg);
-		if (arg.type == 'h')
+		if (arg.type == WL_ARG_FD)
 			closure->args[i].h = -1;
 	}
 }
@@ -622,30 +620,30 @@ wl_closure_marshal(struct wl_object *sender, uint32_t opcode,
 		signature = get_next_argument(signature, &arg);
 
 		switch (arg.type) {
-		case 'f':
-		case 'u':
-		case 'i':
+		case WL_ARG_FIXED:
+		case WL_ARG_UINT:
+		case WL_ARG_INT:
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			if (!arg.nullable && args[i].s == NULL)
 				goto err_null;
 			break;
-		case 'o':
+		case WL_ARG_OBJECT:
 			if (!arg.nullable && args[i].o == NULL)
 				goto err_null;
 			break;
-		case 'n':
+		case WL_ARG_NEW_ID:
 			object = args[i].o;
 			if (object == NULL)
 				goto err_null;
 
 			closure->args[i].n = object ? object->id : 0;
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			if (args[i].a == NULL)
 				goto err_null;
 			break;
-		case 'h':
+		case WL_ARG_FD:
 			fd = args[i].h;
 			dup_fd = wl_os_dupfd_cloexec(fd, 0);
 			if (dup_fd < 0) {
@@ -731,7 +729,7 @@ wl_connection_demarshal(struct wl_connection *connection,
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 
-		if (arg.type != 'h' && p + 1 > end) {
+		if (arg.type != WL_ARG_FD && p + 1 > end) {
 			wl_log("message too short, "
 			       "object (%d), message %s(%s)\n",
 			       closure->sender_id, message->name,
@@ -741,16 +739,16 @@ wl_connection_demarshal(struct wl_connection *connection,
 		}
 
 		switch (arg.type) {
-		case 'u':
+		case WL_ARG_UINT:
 			closure->args[i].u = *p++;
 			break;
-		case 'i':
+		case WL_ARG_INT:
 			closure->args[i].i = *p++;
 			break;
-		case 'f':
+		case WL_ARG_FIXED:
 			closure->args[i].f = *p++;
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			length = *p++;
 
 			if (length == 0 && !arg.nullable) {
@@ -789,7 +787,7 @@ wl_connection_demarshal(struct wl_connection *connection,
 			closure->args[i].s = s;
 			p = next;
 			break;
-		case 'o':
+		case WL_ARG_OBJECT:
 			id = *p++;
 			closure->args[i].n = id;
 
@@ -801,7 +799,7 @@ wl_connection_demarshal(struct wl_connection *connection,
 				goto err;
 			}
 			break;
-		case 'n':
+		case WL_ARG_NEW_ID:
 			id = *p++;
 			closure->args[i].n = id;
 
@@ -824,7 +822,7 @@ wl_connection_demarshal(struct wl_connection *connection,
 			}
 
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			length = *p++;
 
 			length_in_u32 = div_roundup(length, sizeof *p);
@@ -845,7 +843,7 @@ wl_connection_demarshal(struct wl_connection *connection,
 			closure->args[i].a = array_extra++;
 			p = next;
 			break;
-		case 'h':
+		case WL_ARG_FD:
 			if (connection->fds_in.tail == connection->fds_in.head) {
 				wl_log("file descriptor expected, "
 				       "object (%d), message %s(%s)\n",
@@ -909,7 +907,7 @@ wl_closure_lookup_objects(struct wl_closure *closure, struct wl_map *objects)
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 		switch (arg.type) {
-		case 'o':
+		case WL_ARG_OBJECT:
 			id = closure->args[i].n;
 			closure->args[i].o = NULL;
 
@@ -936,6 +934,9 @@ wl_closure_lookup_objects(struct wl_closure *closure, struct wl_map *objects)
 				return -1;
 			}
 			closure->args[i].o = object;
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -956,27 +957,27 @@ convert_arguments_to_ffi(const char *signature, uint32_t flags,
 		sig_iter = get_next_argument(sig_iter, &arg);
 
 		switch(arg.type) {
-		case 'i':
+		case WL_ARG_INT:
 			ffi_types[i] = &ffi_type_sint32;
 			ffi_args[i] = &args[i].i;
 			break;
-		case 'u':
+		case WL_ARG_UINT:
 			ffi_types[i] = &ffi_type_uint32;
 			ffi_args[i] = &args[i].u;
 			break;
-		case 'f':
+		case WL_ARG_FIXED:
 			ffi_types[i] = &ffi_type_sint32;
 			ffi_args[i] = &args[i].f;
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			ffi_types[i] = &ffi_type_pointer;
 			ffi_args[i] = &args[i].s;
 			break;
-		case 'o':
+		case WL_ARG_OBJECT:
 			ffi_types[i] = &ffi_type_pointer;
 			ffi_args[i] = &args[i].o;
 			break;
-		case 'n':
+		case WL_ARG_NEW_ID:
 			if (flags & WL_CLOSURE_INVOKE_CLIENT) {
 				ffi_types[i] = &ffi_type_pointer;
 				ffi_args[i] = &args[i].o;
@@ -985,11 +986,11 @@ convert_arguments_to_ffi(const char *signature, uint32_t flags,
 				ffi_args[i] = &args[i].n;
 			}
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			ffi_types[i] = &ffi_type_pointer;
 			ffi_args[i] = &args[i].a;
 			break;
-		case 'h':
+		case WL_ARG_FD:
 			ffi_types[i] = &ffi_type_sint32;
 			ffi_args[i] = &args[i].h;
 			break;
@@ -1056,7 +1057,7 @@ copy_fds_to_connection(struct wl_closure *closure,
 	count = arg_count_for_signature(signature);
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
-		if (arg.type != 'h')
+		if (arg.type != WL_ARG_FD)
 			continue;
 
 		fd = closure->args[i].h;
@@ -1087,16 +1088,16 @@ buffer_size_for_closure(struct wl_closure *closure)
 		signature = get_next_argument(signature, &arg);
 
 		switch (arg.type) {
-		case 'h':
+		case WL_ARG_FD:
 			break;
-		case 'u':
-		case 'i':
-		case 'f':
-		case 'o':
-		case 'n':
+		case WL_ARG_UINT:
+		case WL_ARG_INT:
+		case WL_ARG_FIXED:
+		case WL_ARG_OBJECT:
+		case WL_ARG_NEW_ID:
 			buffer_size++;
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			if (closure->args[i].s == NULL) {
 				buffer_size++;
 				break;
@@ -1105,7 +1106,7 @@ buffer_size_for_closure(struct wl_closure *closure)
 			size = strlen(closure->args[i].s) + 1;
 			buffer_size += 1 + div_roundup(size, sizeof(uint32_t));
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			if (closure->args[i].a == NULL) {
 				buffer_size++;
 				break;
@@ -1143,29 +1144,29 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 
-		if (arg.type == 'h')
+		if (arg.type == WL_ARG_FD)
 			continue;
 
 		if (p + 1 > end)
 			goto overflow;
 
 		switch (arg.type) {
-		case 'u':
+		case WL_ARG_UINT:
 			*p++ = closure->args[i].u;
 			break;
-		case 'i':
+		case WL_ARG_INT:
 			*p++ = closure->args[i].i;
 			break;
-		case 'f':
+		case WL_ARG_FIXED:
 			*p++ = closure->args[i].f;
 			break;
-		case 'o':
+		case WL_ARG_OBJECT:
 			*p++ = closure->args[i].o ? closure->args[i].o->id : 0;
 			break;
-		case 'n':
+		case WL_ARG_NEW_ID:
 			*p++ = closure->args[i].n;
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			if (closure->args[i].s == NULL) {
 				*p++ = 0;
 				break;
@@ -1180,7 +1181,7 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 			memcpy(p, closure->args[i].s, size);
 			p += div_roundup(size, sizeof *p);
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			if (closure->args[i].a == NULL) {
 				*p++ = 0;
 				break;
@@ -1196,7 +1197,7 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 				memcpy(p, closure->args[i].a->data, size);
 			p += div_roundup(size, sizeof *p);
 			break;
-		default:
+		case WL_ARG_FD:
 			break;
 		}
 	}
@@ -1320,13 +1321,13 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 			fprintf(f, ", ");
 
 		switch (arg.type) {
-		case 'u':
+		case WL_ARG_UINT:
 			fprintf(f, "%u", closure->args[i].u);
 			break;
-		case 'i':
+		case WL_ARG_INT:
 			fprintf(f, "%d", closure->args[i].i);
 			break;
-		case 'f':
+		case WL_ARG_FIXED:
 			/* The magic number 390625 is 1e8 / 256 */
 			if (closure->args[i].f >= 0) {
 				fprintf(f, "%d.%08d",
@@ -1339,13 +1340,13 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 					-390625 * (closure->args[i].f % 256));
 			}
 			break;
-		case 's':
+		case WL_ARG_STRING:
 			if (closure->args[i].s)
 				fprintf(f, "\"%s\"", closure->args[i].s);
 			else
 				fprintf(f, "nil");
 			break;
-		case 'o':
+		case WL_ARG_OBJECT:
 			if (closure->args[i].o)
 				fprintf(f, "%s#%u",
 					closure->args[i].o->interface->name,
@@ -1353,7 +1354,7 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 			else
 				fprintf(f, "nil");
 			break;
-		case 'n':
+		case WL_ARG_NEW_ID:
 			if (n_parse)
 				nval = n_parse(&closure->args[i]);
 			else
@@ -1368,10 +1369,10 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 			else
 				fprintf(f, "nil");
 			break;
-		case 'a':
+		case WL_ARG_ARRAY:
 			fprintf(f, "array[%zu]", closure->args[i].a->size);
 			break;
-		case 'h':
+		case WL_ARG_FD:
 			fprintf(f, "fd %d", closure->args[i].h);
 			break;
 		}
@@ -1394,7 +1395,7 @@ wl_closure_close_fds(struct wl_closure *closure)
 
 	for (i = 0; i < closure->count; i++) {
 		signature = get_next_argument(signature, &arg);
-		if (arg.type == 'h' && closure->args[i].h != -1)
+		if (arg.type == WL_ARG_FD && closure->args[i].h != -1)
 			close(closure->args[i].h);
 	}
 

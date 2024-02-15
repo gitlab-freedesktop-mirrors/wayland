@@ -48,6 +48,20 @@
 #define WL_MAP_MAX_OBJECTS 0x00f00000
 #define WL_CLOSURE_MAX_ARGS 20
 
+/**
+ * Argument types used in signatures.
+ */
+enum wl_arg_type {
+	WL_ARG_INT = 'i',
+	WL_ARG_UINT = 'u',
+	WL_ARG_FIXED = 'f',
+	WL_ARG_STRING = 's',
+	WL_ARG_OBJECT = 'o',
+	WL_ARG_NEW_ID = 'n',
+	WL_ARG_ARRAY = 'a',
+	WL_ARG_FD = 'h',
+};
+
 struct wl_object {
 	const struct wl_interface *interface;
 	const void *implementation;
@@ -149,7 +163,7 @@ struct wl_closure {
 };
 
 struct argument_details {
-	char type;
+	enum wl_arg_type type;
 	int nullable;
 };
 
