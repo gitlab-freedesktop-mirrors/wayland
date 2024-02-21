@@ -1880,7 +1880,7 @@
     </event>
    </interface>
 
-  <interface name="wl_seat" version="9">
+  <interface name="wl_seat" version="10">
     <description summary="group of input devices">
       A seat is a group of keyboards, pointer and touch devices. This
       object is published as a global during start up, or when such a
@@ -2013,7 +2013,7 @@
 
   </interface>
 
-  <interface name="wl_pointer" version="9">
+  <interface name="wl_pointer" version="10">
     <description summary="pointer input device">
       The wl_pointer interface represents one or more input devices,
       such as mice, which control the pointer location and pointer_focus
@@ -2426,7 +2426,7 @@
     </event>
   </interface>
 
-  <interface name="wl_keyboard" version="9">
+  <interface name="wl_keyboard" version="10">
     <description summary="keyboard input device">
       The wl_keyboard interface represents one or more keyboards
       associated with a seat.
@@ -2508,9 +2508,18 @@
     <enum name="key_state">
       <description summary="physical key state">
 	Describes the physical state of a key that produced the key event.
+
+	Since version 10, the key can be in a "repeated" pseudo-state which
+	means the same as "pressed", but is used to signal repetition in the
+	key event.
+
+	The key may only enter the repeated state after entering the pressed
+	state and before entering the released state. This event may be
+	generated multiple times while the key is down.
       </description>
       <entry name="released" value="0" summary="key is not pressed"/>
       <entry name="pressed" value="1" summary="key is pressed"/>
+      <entry name="repeated" value="2" summary="key was repeated" since="10"/>
     </enum>
 
     <event name="key">
@@ -2533,6 +2542,11 @@
 	compositor must not send this event if state is pressed (resp. released)
 	and the key was already logically down (resp. was not logically down)
 	immediately before this event.
+
+	Since version 10, compositors may send key events with the "repeated"
+	key state when a wl_keyboard.repeat_info event with a rate argument of
+	0 has been received. This allows the compositor to take over the
+	responsibility of key repetition.
       </description>
       <arg name="serial" type="uint" summary="serial number of the key event"/>
       <arg name="time" type="uint" summary="timestamp with millisecond granularity"/>
@@ -2593,7 +2607,7 @@
     </event>
   </interface>
 
-  <interface name="wl_touch" version="9">
+  <interface name="wl_touch" version="10">
     <description summary="touchscreen input device">
       The wl_touch interface represents a touchscreen
       associated with a seat.
