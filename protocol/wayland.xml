@@ -1704,10 +1704,12 @@
 
     <request name="set_buffer_transform" since="2">
       <description summary="sets the buffer transformation">
-	This request sets an optional transformation on how the compositor
-	interprets the contents of the buffer attached to the surface. The
-	accepted values for the transform parameter are the values for
-	wl_output.transform.
+	This request sets the transformation that the client has already applied
+	to the content of the buffer. The accepted values for the transform
+	parameter are the values for wl_output.transform.
+
+	The compositor applies the inverse of this transformation whenever it
+	uses the buffer contents.
 
 	Buffer transform is double-buffered state, see wl_surface.commit.
 
@@ -1861,9 +1863,9 @@
 	Before receiving this event the preferred buffer transform for this
 	surface is normal.
 
-	It is intended that transform aware clients use this event to apply the
-	transform to their content and use wl_surface.set_buffer_transform to
-	indicate the transform they have rendered with.
+	Applying this transformation to the surface buffer contents and using
+	wl_surface.set_buffer_transform might allow the compositor to use the
+	surface buffer more efficiently.
       </description>
       <arg name="transform" type="uint" enum="wl_output.transform"
 	   summary="preferred transform"/>
@@ -2726,10 +2728,9 @@
     </enum>
 
     <enum name="transform">
-      <description summary="transform from framebuffer to output">
-	This describes the transform that a compositor will apply to a
-	surface to compensate for the rotation or mirroring of an
-	output device.
+      <description summary="transformation applied to buffer contents">
+	This describes transformations that clients and compositors apply to
+	buffer contents.
 
 	The flipped values correspond to an initial flip around a
 	vertical axis followed by rotation.
@@ -2787,7 +2788,7 @@
       <arg name="model" type="string"
 	   summary="textual description of the model"/>
       <arg name="transform" type="int" enum="transform"
-	   summary="transform that maps framebuffer to output"/>
+	   summary="additional transformation applied to buffer contents during presentation"/>
     </event>
 
     <enum name="mode" bitfield="true">
