@@ -906,38 +906,35 @@ wl_closure_lookup_objects(struct wl_closure *closure, struct wl_map *objects)
 	count = arg_count_for_signature(signature);
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
-		switch (arg.type) {
-		case WL_ARG_OBJECT:
-			id = closure->args[i].n;
-			closure->args[i].o = NULL;
+		if (arg.type != WL_ARG_OBJECT)
+			continue;
 
-			object = wl_map_lookup(objects, id);
-			if (wl_object_is_zombie(objects, id)) {
-				/* references object we've already
-				 * destroyed client side */
-				object = NULL;
-			} else if (object == NULL && id != 0) {
-				wl_log("unknown object (%u), message %s(%s)\n",
-				       id, message->name, message->signature);
-				errno = EINVAL;
-				return -1;
-			}
+		id = closure->args[i].n;
+		closure->args[i].o = NULL;
 
-			if (object != NULL && message->types[i] != NULL &&
-			    !wl_interface_equal((object)->interface,
-						message->types[i])) {
-				wl_log("invalid object (%u), type (%s), "
-				       "message %s(%s)\n",
-				       id, (object)->interface->name,
-				       message->name, message->signature);
-				errno = EINVAL;
-				return -1;
-			}
-			closure->args[i].o = object;
-			break;
-		default:
-			break;
+		object = wl_map_lookup(objects, id);
+		if (wl_object_is_zombie(objects, id)) {
+			/* references object we've already
+			 * destroyed client side */
+			object = NULL;
+		} else if (object == NULL && id != 0) {
+			wl_log("unknown object (%u), message %s(%s)\n",
+			       id, message->name, message->signature);
+			errno = EINVAL;
+			return -1;
 		}
+
+		if (object != NULL && message->types[i] != NULL &&
+		    !wl_interface_equal((object)->interface,
+					message->types[i])) {
+			wl_log("invalid object (%u), type (%s), "
+			       "message %s(%s)\n",
+			       id, (object)->interface->name,
+			       message->name, message->signature);
+			errno = EINVAL;
+			return -1;
+		}
+		closure->args[i].o = object;
 	}
 
 	return 0;
