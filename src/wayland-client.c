@@ -1487,22 +1487,19 @@ create_proxies(struct wl_proxy *sender, struct wl_closure *closure)
 	count = arg_count_for_signature(signature);
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
-		switch (arg.type) {
-		case WL_ARG_NEW_ID:
-			id = closure->args[i].n;
-			if (id == 0) {
-				closure->args[i].o = NULL;
-				break;
-			}
-			proxy = wl_proxy_create_for_id(sender, id,
-						       closure->message->types[i]);
-			if (proxy == NULL)
-				return -1;
-			closure->args[i].o = (struct wl_object *)proxy;
-			break;
-		default:
-			break;
+		if (arg.type != WL_ARG_NEW_ID)
+			continue;
+
+		id = closure->args[i].n;
+		if (id == 0) {
+			closure->args[i].o = NULL;
+			continue;
 		}
+		proxy = wl_proxy_create_for_id(sender, id,
+					       closure->message->types[i]);
+		if (proxy == NULL)
+			return -1;
+		closure->args[i].o = (struct wl_object *)proxy;
 	}
 
 	return 0;
