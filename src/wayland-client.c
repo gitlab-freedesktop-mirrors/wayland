@@ -733,18 +733,14 @@ create_outgoing_proxy(struct wl_proxy *proxy, const struct wl_message *message,
 	count = arg_count_for_signature(signature);
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
+		if (arg.type != WL_ARG_NEW_ID)
+			continue;
 
-		switch (arg.type) {
-		case WL_ARG_NEW_ID:
-			new_proxy = proxy_create(proxy, interface, version);
-			if (new_proxy == NULL)
-				return NULL;
+		new_proxy = proxy_create(proxy, interface, version);
+		if (new_proxy == NULL)
+			return NULL;
 
-			args[i].o = &new_proxy->object;
-			break;
-		default:
-			break;
-		}
+		args[i].o = &new_proxy->object;
 	}
 
 	return new_proxy;
