@@ -479,8 +479,10 @@
       client provides and updates the contents is defined by the buffer factory
       interface.
 
-      If the buffer uses a format that has an alpha channel, the alpha channel
-      is assumed to be premultiplied in the electrical color channel values
+      Color channels are assumed to be electrical rather than optical (in other
+      words, encoded with a transfer function) unless otherwise specified. If
+      the buffer uses a format that has an alpha channel, the alpha channel is
+      assumed to be premultiplied into the electrical color channel values
       (after transfer function encoding) unless otherwise specified.
 
       Note, because wl_buffer objects are created from multiple independent
