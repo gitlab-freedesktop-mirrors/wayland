@@ -410,7 +410,7 @@ wl_message_count_arrays(const struct wl_message *message)
 	int i, arrays;
 
 	for (i = 0, arrays = 0; message->signature[i]; i++) {
-		if (message->signature[i] == 'a')
+		if (message->signature[i] == WL_ARG_ARRAY)
 			arrays++;
 	}
 
