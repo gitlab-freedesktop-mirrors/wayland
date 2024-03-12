@@ -2296,7 +2296,7 @@
       <arg name="axis" type="uint" enum="axis" summary="the axis stopped with this event"/>
     </event>
 
-    <event name="axis_discrete" since="5">
+    <event name="axis_discrete" since="5" deprecated-since="8">
       <description summary="axis click event">
 	Discrete step information for scroll and other axes.
 
