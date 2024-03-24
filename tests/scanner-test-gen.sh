@@ -19,3 +19,7 @@ generate "-c client-header" "small.xml" "small-client-core.h"
 generate "-c server-header" "small.xml" "small-server-core.h"
 
 generate "private-code" "small.xml" "small-private-code.c"
+
+generate "code" "empty.xml" "empty-code.c"
+generate "client-header" "empty.xml" "empty-client.h"
+generate "server-header" "empty.xml" "empty-server.h"
