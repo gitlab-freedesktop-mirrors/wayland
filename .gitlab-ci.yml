@@ -72,10 +72,10 @@ stages:
     BUILD_OS: debian
     FDO_DISTRIBUTION_VERSION: bookworm
     FDO_DISTRIBUTION_PACKAGES: 'build-essential pkg-config libexpat1-dev libffi-dev libxml2-dev doxygen graphviz xmlto xsltproc docbook-xsl python3-pip python3-setuptools ninja-build'
-    FDO_DISTRIBUTION_EXEC: 'pip3 install --break-system-packages meson==0.56.0'
+    FDO_DISTRIBUTION_EXEC: 'pip3 install --break-system-packages meson~=0.57.2'
     # bump this tag every time you change something which requires rebuilding the
     # base image
-    FDO_DISTRIBUTION_TAG: "2023-08-02.0"
+    FDO_DISTRIBUTION_TAG: "2024-03-28.2"
 
 .debian-x86_64:
   extends:
