@@ -2,7 +2,7 @@ project(
 	'wayland', 'c',
 	version: '1.22.90',
 	license: 'MIT',
-	meson_version: '>= 0.56.0',
+	meson_version: '>= 0.57.0',
 	default_options: [
 		'warning_level=2',
 		'buildtype=debugoptimized',
