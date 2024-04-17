@@ -120,7 +120,7 @@ struct wl_display;
 struct wl_event_queue;
 
 /** Destroy proxy after marshalling
- * @ingroup wl_proxy
+ * \relates wl_proxy
  */
 #define WL_MARSHAL_FLAG_DESTROY (1 << 0)
 
