@@ -1647,10 +1647,16 @@ dispatch_event(struct wl_display *display, struct wl_event_queue *queue)
 	validate_closure_objects(closure);
 	proxy = closure->proxy;
 	proxy_destroyed = !!(proxy->flags & WL_PROXY_FLAG_DESTROYED);
+
+	if (debug_client) {
+		bool discarded = proxy_destroyed ||
+				 !(proxy->dispatcher || proxy->object.implementation);
+
+		wl_closure_print(closure, &proxy->object, false, discarded,
+				 id_from_object, queue->name);
+	}
+
 	if (proxy_destroyed) {
-		if (debug_client)
-			wl_closure_print(closure, &proxy->object, false, true,
-					 id_from_object, queue->name);
 		destroy_queued_closure(closure);
 		return;
 	}
@@ -1658,17 +1664,9 @@ dispatch_event(struct wl_display *display, struct wl_event_queue *queue)
 	pthread_mutex_unlock(&display->mutex);
 
 	if (proxy->dispatcher) {
-		if (debug_client)
-			wl_closure_print(closure, &proxy->object, false, false,
-			                 id_from_object, queue->name);
-
 		wl_closure_dispatch(closure, proxy->dispatcher,
 				    &proxy->object, opcode);
 	} else if (proxy->object.implementation) {
-		if (debug_client)
-			wl_closure_print(closure, &proxy->object, false, false,
-					 id_from_object, queue->name);
-
 		wl_closure_invoke(closure, WL_CLOSURE_INVOKE_CLIENT,
 				  &proxy->object, opcode, proxy->user_data);
 	}
