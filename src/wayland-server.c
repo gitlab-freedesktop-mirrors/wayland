@@ -520,6 +520,11 @@ bind_display(struct wl_client *client, struct wl_display *display);
  *
  * On failure this function sets errno accordingly and returns NULL.
  *
+ * On success, the new client object takes the ownership of the file
+ * descriptor. On failure, the ownership of the socket endpoint file
+ * descriptor is unchanged, it is the responsibility of the caller to
+ * perform cleanup, e.g. call close().
+ *
  * \memberof wl_display
  */
 WL_EXPORT struct wl_client *
