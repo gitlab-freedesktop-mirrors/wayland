@@ -288,7 +288,16 @@ wl_resource_queue_event(struct wl_resource *resource, uint32_t opcode, ...)
 	wl_resource_queue_event_array(resource, opcode, args);
 }
 
-static void
+/** Post a protocol error
+ *
+ * \param resource The resource object
+ * \param code The error code
+ * \param msg The error message format string
+ * \param argp The format string argument list
+ *
+ * \memberof wl_resource
+ */
+WL_EXPORT void
 wl_resource_post_error_vargs(struct wl_resource *resource,
 			     uint32_t code, const char *msg, va_list argp)
 {
@@ -310,7 +319,6 @@ wl_resource_post_error_vargs(struct wl_resource *resource,
 	wl_resource_post_event(client->display_resource,
 			       WL_DISPLAY_ERROR, resource, code, buffer);
 	client->error = true;
-
 }
 
 /** Post a protocol error
