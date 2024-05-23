@@ -313,6 +313,15 @@ wl_resource_post_error_vargs(struct wl_resource *resource,
 
 }
 
+/** Post a protocol error
+ *
+ * \param resource The resource object
+ * \param code The error code
+ * \param msg The error message format string
+ * \param ... The format string arguments
+ *
+ * \memberof wl_resource
+ */
 WL_EXPORT void
 wl_resource_post_error(struct wl_resource *resource,
 		       uint32_t code, const char *msg, ...)

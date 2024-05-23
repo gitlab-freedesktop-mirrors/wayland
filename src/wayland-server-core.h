@@ -550,7 +550,6 @@ void
 wl_resource_queue_event_array(struct wl_resource *resource,
 			      uint32_t opcode, union wl_argument *args);
 
-/* msg is a printf format string, variable args are its args. */
 void
 wl_resource_post_error(struct wl_resource *resource,
 		       uint32_t code, const char *msg, ...) WL_PRINTF(3, 4);
