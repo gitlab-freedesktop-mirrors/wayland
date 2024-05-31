@@ -131,7 +131,9 @@ if get_option('scanner')
 		'wayland-scanner.mk',
 		'protocol/wayland.xml',
 		'protocol/wayland.dtd',
-	])
+	],
+		install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'wayland'),
+	)
 
 	install_data(
 		[ 'wayland-scanner.m4' ],
