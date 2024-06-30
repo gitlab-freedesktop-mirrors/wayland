@@ -75,7 +75,8 @@ struct wl_connection {
 static inline size_t
 size_pot(uint32_t size_bits)
 {
-	assert(size_bits < 8 * sizeof(size_t));
+	if (!(size_bits < 8 * sizeof(size_t)))
+		wl_abort("Too many bits for size_t\n");
 
 	return ((size_t)1) << size_bits;
 }

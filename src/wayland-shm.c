@@ -144,12 +144,17 @@ shm_pool_unref(struct wl_shm_pool *pool, bool external)
 {
 	if (external) {
 		pool->external_refcount--;
-		assert(pool->external_refcount >= 0);
+		if (!(pool->external_refcount >= 0))
+			wl_abort("Requested to unref an external reference to "
+				 "pool but none found\n");
 		if (pool->external_refcount == 0)
 			shm_pool_finish_resize(pool);
 	} else {
 		pool->internal_refcount--;
-		assert(pool->internal_refcount >= 0);
+		if (!(pool->internal_refcount >= 0))
+			wl_abort("Requested to unref an internal reference to "
+				 "pool but none found\n");
+
 	}
 
 	if (pool->internal_refcount + pool->external_refcount > 0)
@@ -509,8 +514,9 @@ wl_shm_buffer_get_height(struct wl_shm_buffer *buffer)
 WL_EXPORT struct wl_shm_pool *
 wl_shm_buffer_ref_pool(struct wl_shm_buffer *buffer)
 {
-	assert(buffer->pool->internal_refcount +
-	       buffer->pool->external_refcount);
+	if (!(buffer->pool->internal_refcount +
+	       buffer->pool->external_refcount))
+		wl_abort("Can't get reference to pool that has been freed\n");
 
 	buffer->pool->external_refcount++;
 	return buffer->pool;
@@ -658,8 +664,9 @@ wl_shm_buffer_begin_access(struct wl_shm_buffer *buffer)
 		pthread_setspecific(wl_shm_sigbus_data_key, sigbus_data);
 	}
 
-	assert(sigbus_data->current_pool == NULL ||
-	       sigbus_data->current_pool == pool);
+	if (!(sigbus_data->current_pool == NULL ||
+	       sigbus_data->current_pool == pool))
+		wl_abort("Incorrect pool passed for current thread\n");
 
 	sigbus_data->current_pool = pool;
 	sigbus_data->access_count++;
@@ -686,7 +693,9 @@ wl_shm_buffer_end_access(struct wl_shm_buffer *buffer)
 		return;
 
 	sigbus_data = pthread_getspecific(wl_shm_sigbus_data_key);
-	assert(sigbus_data && sigbus_data->access_count >= 1);
+	if (!(sigbus_data && sigbus_data->access_count >= 1))
+		wl_abort("sigbus_data is NULL or wl_shm_buffer_begin_access "
+			 "wasn't called before\n");
 
 	if (--sigbus_data->access_count == 0) {
 		if (sigbus_data->fallback_mapping_used) {

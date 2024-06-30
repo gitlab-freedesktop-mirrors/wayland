@@ -235,13 +235,16 @@ wl_event_queue_init(struct wl_event_queue *queue,
 static void
 wl_proxy_unref(struct wl_proxy *proxy)
 {
-	assert(proxy->refcount > 0);
+	if (!(proxy->refcount > 0))
+		wl_abort("Proxy requested for unref has no references\n");
 	if (--proxy->refcount > 0)
 		return;
 
 	/* If we get here, the client must have explicitly requested
 	 * deletion. */
-	assert(proxy->flags & WL_PROXY_FLAG_DESTROYED);
+	if (!(proxy->flags & WL_PROXY_FLAG_DESTROYED))
+		wl_abort("Proxy with no references not yet explicitly"
+			 "destroyed\n");
 	free(proxy);
 }
 
@@ -1172,7 +1175,8 @@ connect_to_socket(const char *name)
 			         "%s", name) + 1;
 	}
 
-	assert(name_size > 0);
+	if (!(name_size > 0))
+		wl_abort("Error assigning path name for socket connection\n");
 	if (name_size > (int)sizeof addr.sun_path) {
 		if (!path_is_absolute) {
 			wl_log("error: socket path \"%s/%s\" plus null terminator"
@@ -2453,7 +2457,9 @@ wl_proxy_set_queue(struct wl_proxy *proxy, struct wl_event_queue *queue)
 	wl_list_remove(&proxy->queue_link);
 
 	if (queue) {
-		assert(proxy->display == queue->display);
+		if (!(proxy->display == queue->display))
+			wl_abort("Proxy and queue point to different "
+				 "wl_displays");
 		proxy->queue = queue;
 	} else {
 		proxy->queue = &proxy->display->default_queue;
@@ -2581,7 +2587,8 @@ wl_proxy_wrapper_destroy(void *proxy_wrapper)
 		wl_abort("Tried to destroy non-wrapper proxy with "
 			 "wl_proxy_wrapper_destroy\n");
 
-	assert(wrapper->refcount == 1);
+	if (!(wrapper->refcount == 1))
+		wl_abort("Expected proxy wrapper's refcount to be 1\n");
 
 	pthread_mutex_lock(&wrapper->display->mutex);
 

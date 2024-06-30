@@ -447,7 +447,8 @@ wl_timer_heap_disarm(struct wl_timer_heap *timers,
 	struct wl_event_source_timer *last_end_evt;
 	int old_source_idx;
 
-	assert(source->heap_idx >= 0);
+	if (!(source->heap_idx >= 0))
+		wl_abort("Timer has already been disarmed\n");
 
 	old_source_idx = source->heap_idx;
 	source->heap_idx = -1;
@@ -476,7 +477,8 @@ wl_timer_heap_arm(struct wl_timer_heap *timers,
 		  struct wl_event_source_timer *source,
 		  struct timespec deadline)
 {
-	assert(source->heap_idx == -1);
+	if (!(source->heap_idx == -1))
+		wl_abort("Timer is already armed\n");
 
 	source->deadline = deadline;
 	timers->data[timers->active] = source;

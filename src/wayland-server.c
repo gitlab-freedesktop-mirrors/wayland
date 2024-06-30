@@ -1714,7 +1714,8 @@ wl_socket_init_for_display_name(struct wl_socket *s, const char *name)
 	name_size = snprintf(s->addr.sun_path, sizeof s->addr.sun_path,
 			     "%s%s%s", runtime_dir, separator, name) + 1;
 
-	assert(name_size > 0);
+	if (!(name_size > 0))
+		wl_abort("Error assigning path name for socket address\n");
 	if (name_size > (int)sizeof s->addr.sun_path) {
 		wl_log("error: socket path \"%s%s%s\" plus null terminator"
 		       " exceeds 108 bytes\n", runtime_dir, separator, name);
