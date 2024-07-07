@@ -1391,22 +1391,35 @@ emit_validator(struct interface *interface, struct enumeration *e)
 	       " * @ref %s_%s\n"
 	       " */\n"
 	       "static inline bool\n"
-	       "%s_%s_is_valid(uint32_t value, uint32_t version) {\n"
-	       "	switch (value) {\n",
+	       "%s_%s_is_valid(uint32_t value, uint32_t version) {\n",
 	       interface->name, interface->name, e->name,
 	       interface->name, e->name,
 	       interface->name, e->name);
-	wl_list_for_each(entry, &e->entry_list, link) {
-		printf("	case %s%s_%s_%s:\n"
-		       "		return version >= %d;\n",
-		       entry->value[0] == '-' ? "(uint32_t)" : "",
-		       interface->uppercase_name, e->uppercase_name,
-		       entry->uppercase_name, entry->since);
+
+	if (e->bitfield) {
+		printf("	uint32_t valid = 0;\n");
+		wl_list_for_each(entry, &e->entry_list, link) {
+			printf("	if (version >= %d)\n"
+			       "		valid |= %s_%s_%s;\n",
+			       entry->since,
+			       interface->uppercase_name, e->uppercase_name,
+			       entry->uppercase_name);
+		}
+		printf("	return (value & ~valid) == 0;\n");
+	} else {
+		printf("	switch (value) {\n");
+		wl_list_for_each(entry, &e->entry_list, link) {
+			printf("	case %s%s_%s_%s:\n"
+			       "		return version >= %d;\n",
+			       entry->value[0] == '-' ? "(uint32_t)" : "",
+			       interface->uppercase_name, e->uppercase_name,
+			       entry->uppercase_name, entry->since);
+		}
+		printf("	default:\n"
+		       "		return false;\n"
+		       "	}\n");
 	}
-	printf("	default:\n"
-	       "		return false;\n"
-	       "	}\n"
-	       "}\n");
+	printf("}\n");
 }
 
 static void
