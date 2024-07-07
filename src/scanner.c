@@ -1379,6 +1379,37 @@ emit_event_wrappers(struct wl_list *message_list, struct interface *interface)
 }
 
 static void
+emit_validator(struct interface *interface, struct enumeration *e)
+{
+	struct entry *entry;
+
+	printf("/**\n"
+	       " * @ingroup iface_%s\n"
+	       " * Validate a %s %s value.\n"
+	       " *\n"
+	       " * @return true on success, false on error.\n"
+	       " * @ref %s_%s\n"
+	       " */\n"
+	       "static inline bool\n"
+	       "%s_%s_is_valid(uint32_t value, uint32_t version) {\n"
+	       "	switch (value) {\n",
+	       interface->name, interface->name, e->name,
+	       interface->name, e->name,
+	       interface->name, e->name);
+	wl_list_for_each(entry, &e->entry_list, link) {
+		printf("	case %s%s_%s_%s:\n"
+		       "		return version >= %d;\n",
+		       entry->value[0] == '-' ? "(uint32_t)" : "",
+		       interface->uppercase_name, e->uppercase_name,
+		       entry->uppercase_name, entry->since);
+	}
+	printf("	default:\n"
+	       "		return false;\n"
+	       "	}\n"
+	       "}\n");
+}
+
+static void
 emit_enumerations(struct interface *interface, bool with_validators)
 {
 	struct enumeration *e;
@@ -1439,32 +1470,8 @@ emit_enumerations(struct interface *interface, bool with_validators)
 
 		}
 
-		if (with_validators) {
-			printf("/**\n"
-			       " * @ingroup iface_%s\n"
-			       " * Validate a %s %s value.\n"
-			       " *\n"
-			       " * @return true on success, false on error.\n"
-			       " * @ref %s_%s\n"
-			       " */\n"
-			       "static inline bool\n"
-			       "%s_%s_is_valid(uint32_t value, uint32_t version) {\n"
-			       "	switch (value) {\n",
-			       interface->name, interface->name, e->name,
-			       interface->name, e->name,
-			       interface->name, e->name);
-			wl_list_for_each(entry, &e->entry_list, link) {
-				printf("	case %s%s_%s_%s:\n"
-				       "		return version >= %d;\n",
-				       entry->value[0] == '-' ? "(uint32_t)" : "",
-				       interface->uppercase_name, e->uppercase_name,
-				       entry->uppercase_name, entry->since);
-			}
-			printf("	default:\n"
-			       "		return false;\n"
-			       "	}\n"
-			       "}\n");
-		}
+		if (with_validators)
+			emit_validator(interface, e);
 
 		printf("#endif /* %s_%s_ENUM */\n\n",
 		       interface->uppercase_name, e->uppercase_name);
