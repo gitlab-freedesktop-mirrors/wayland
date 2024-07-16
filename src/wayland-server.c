@@ -37,7 +37,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <dlfcn.h>
-#include <assert.h>
 #include <sys/time.h>
 #include <fcntl.h>
 #include <sys/eventfd.h>
@@ -1534,7 +1533,8 @@ wl_display_terminate(struct wl_display *display)
 	display->run = false;
 
 	ret = write(display->terminate_efd, &terminate, sizeof(terminate));
-	assert (ret >= 0 || errno == EAGAIN);
+	if (ret < 0 && errno != EAGAIN)
+		wl_abort("Write failed at shutdown\n");
 }
 
 WL_EXPORT void

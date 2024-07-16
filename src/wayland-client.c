@@ -37,7 +37,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <ctype.h>
-#include <assert.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <pthread.h>
