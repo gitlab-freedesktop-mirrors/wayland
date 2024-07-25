@@ -928,7 +928,7 @@ wl_connection_demarshal(struct wl_connection *connection,
 	for (i = 0; i < count; i++) {
 		signature = get_next_argument(signature, &arg);
 
-		if (arg.type != WL_ARG_FD && p + 1 > end) {
+		if (arg.type != WL_ARG_FD && p >= end) {
 			wl_log("message too short, "
 			       "object (%d), message %s(%s)\n",
 			       closure->sender_id, message->name,
@@ -1351,7 +1351,7 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 		if (arg.type == WL_ARG_FD)
 			continue;
 
-		if (p + 1 > end)
+		if (p >= end)
 			goto overflow;
 
 		switch (arg.type) {
@@ -1379,7 +1379,7 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 			size = strlen(closure->args[i].s) + 1;
 			*p++ = size;
 
-			if (p + div_roundup(size, sizeof *p) > end)
+			if (div_roundup(size, sizeof *p) > (uint32_t)(end - p))
 				goto overflow;
 
 			memcpy(p, closure->args[i].s, size);
@@ -1394,7 +1394,7 @@ serialize_closure(struct wl_closure *closure, uint32_t *buffer,
 			size = closure->args[i].a->size;
 			*p++ = size;
 
-			if (p + div_roundup(size, sizeof *p) > end)
+			if (div_roundup(size, sizeof *p) > (uint32_t)(end - p))
 				goto overflow;
 
 			if (size != 0)
