@@ -975,9 +975,17 @@ wl_connection_demarshal(struct wl_connection *connection,
 
 			s = (char *) p;
 
-			if (length > 0 && s[length - 1] != '\0') {
+			if (s[length - 1] != '\0') {
 				wl_log("string not nul-terminated, "
 				       "message %s(%s)\n",
+				       message->name, message->signature);
+				errno = EINVAL;
+				goto err;
+			}
+
+			if (strlen(s) != length - 1) {
+				wl_log("string has embedded nul at offset %zu, "
+				       "message %s(%s)\n", strlen(s),
 				       message->name, message->signature);
 				errno = EINVAL;
 				goto err;
