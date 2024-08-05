@@ -260,7 +260,7 @@ ring_buffer_ensure_space(struct wl_ring_buffer *b, size_t count)
 	 * allowed).
 	 */
 	if (net_size > size_pot(size_bits)) {
-		wl_log("Data too big for buffer (%d + %zd > %zd).\n",
+		wl_log("Data too big for buffer (%zu + %zu > %zu).\n",
 		       ring_buffer_size(b), count, size_pot(size_bits));
 		errno = E2BIG;
 		return -1;
