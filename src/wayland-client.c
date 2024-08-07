@@ -916,7 +916,9 @@ wl_proxy_marshal_array_flags(struct wl_proxy *proxy, uint32_t opcode,
 
 	closure = wl_closure_marshal(&proxy->object, opcode, args, message);
 	if (closure == NULL) {
-		wl_log("Error marshalling request: %s\n", strerror(errno));
+		wl_log("Error marshalling request for %s.%s: %s\n",
+		       proxy->object.interface->name, message->name,
+		       strerror(errno));
 		display_fatal_error(proxy->display, errno);
 		goto err_unlock;
 	}
@@ -934,7 +936,9 @@ wl_proxy_marshal_array_flags(struct wl_proxy *proxy, uint32_t opcode,
 	}
 
 	if (wl_closure_send(closure, proxy->display->connection)) {
-		wl_log("Error sending request: %s\n", strerror(errno));
+		wl_log("Error sending request for %s.%s: %s\n",
+		       proxy->object.interface->name, message->name,
+		       strerror(errno));
 		display_fatal_error(proxy->display, errno);
 	}
 
