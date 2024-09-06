@@ -2479,6 +2479,9 @@
 	the surface argument and the keys currently logically down to the keys
 	in the keys argument. The compositor must not send this event if the
 	wl_keyboard already had an active surface immediately before this event.
+
+	Clients should not use the list of pressed keys to emulate key-press
+	events. The order of keys in the list is unspecified.
       </description>
       <arg name="serial" type="uint" summary="serial number of the enter event"/>
       <arg name="surface" type="object" interface="wl_surface" summary="surface gaining keyboard focus"/>
