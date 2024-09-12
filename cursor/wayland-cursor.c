@@ -351,6 +351,8 @@ load_callback(struct xcursor_images *images, void *data)
 {
 	struct wl_cursor_theme *theme = data;
 	struct wl_cursor *cursor;
+	struct wl_cursor **p;
+	size_t s;
 
 	if (wl_cursor_theme_get_cursor(theme, images->name)) {
 		xcursor_images_destroy(images);
@@ -360,15 +362,14 @@ load_callback(struct xcursor_images *images, void *data)
 	cursor = wl_cursor_create_from_xcursor_images(images, theme);
 
 	if (cursor) {
-		theme->cursor_count++;
-		theme->cursors =
-			realloc(theme->cursors,
-				theme->cursor_count * sizeof theme->cursors[0]);
+		s = theme->cursor_count + 1;
+		p = realloc(theme->cursors, s * sizeof theme->cursors[0]);
 
-		if (theme->cursors == NULL) {
-			theme->cursor_count--;
+		if (p == NULL) {
 			free(cursor);
 		} else {
+			theme->cursor_count = s;
+			theme->cursors = p;
 			theme->cursors[theme->cursor_count - 1] = cursor;
 		}
 	}
