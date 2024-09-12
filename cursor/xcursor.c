@@ -571,7 +571,7 @@ xcursor_build_theme_dir(const char *dir, const char *theme)
 	 * add space for any needed directory separators, one per component,
 	 * and one for the trailing null
 	 */
-	full_size = 1 + homelen + 1 + dirlen + 1 + themelen + 1;
+	full_size = (size_t) 1 + homelen + 1 + dirlen + 1 + themelen + 1;
 	full = malloc(full_size);
 	if (!full)
 		return NULL;
