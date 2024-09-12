@@ -686,11 +686,15 @@ load_all_cursors_from_dir(const char *path, int size,
 			  void *user_data)
 {
 	FILE *f;
-	DIR *dir = opendir(path);
+	DIR *dir;
 	struct dirent *ent;
 	char *full;
 	struct xcursor_images *images;
 
+	if (!path)
+		return;
+
+	dir = opendir(path);
 	if (!dir)
 		return;
 
