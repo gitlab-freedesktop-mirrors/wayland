@@ -259,6 +259,8 @@ xcursor_read_file_header(FILE *file)
 		return NULL;
 	if (!xcursor_read_uint(file, &head.ntoc))
 		return NULL;
+	if (head.header < XCURSOR_FILE_HEADER_LEN)
+		return NULL;
 	skip = head.header - XCURSOR_FILE_HEADER_LEN;
 	if (skip)
 		if (fseek(file, skip, SEEK_CUR) == EOF)
