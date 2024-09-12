@@ -27,6 +27,7 @@
 #include "xcursor.h"
 #include "wayland-cursor.h"
 #include "wayland-client.h"
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -284,7 +285,8 @@ wl_cursor_create_from_xcursor_images(struct xcursor_images *images,
 {
 	struct cursor *cursor;
 	struct cursor_image *image;
-	int i, size;
+	size_t size;
+	int i;
 
 	cursor = malloc(sizeof *cursor);
 	if (!cursor)
@@ -314,7 +316,12 @@ wl_cursor_create_from_xcursor_images(struct xcursor_images *images,
 		image->image.hotspot_y = images->images[i]->yhot;
 		image->image.delay = images->images[i]->delay;
 
-		size = image->image.width * image->image.height * 4;
+		size = (size_t) image->image.width * image->image.height * 4;
+		if (size > INT_MAX) {
+			free(image);
+			break;
+		}
+
 		image->offset = shm_pool_allocate(theme->pool, size);
 		if (image->offset < 0) {
 			free(image);
@@ -387,6 +394,9 @@ wl_cursor_theme_load(const char *name, int size, struct wl_shm *shm)
 
 	theme = malloc(sizeof *theme);
 	if (!theme)
+		return NULL;
+
+	if (size < 0 || (size > 0 && INT_MAX / size / 4 < size))
 		return NULL;
 
 	if (!name)
