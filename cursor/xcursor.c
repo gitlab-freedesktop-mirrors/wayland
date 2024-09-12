@@ -798,14 +798,14 @@ xcursor_load_theme_protected(const char *theme, int size,
 	free(xcursor_path);
 }
 
-/** Load all the cursor of a theme
+/** Load all the cursors of a theme
  *
  * This function loads all the cursor images of a given theme and its
- * inherited themes. Each cursor is loaded into an struct xcursor_images object
+ * inherited themes. Each cursor is loaded into a struct xcursor_images object
  * which is passed to the caller's load callback. If a cursor appears
  * more than once across all the inherited themes, the load callback
  * will be called multiple times, with possibly different struct xcursor_images
- * object which have the same name. The user is expected to destroy the
+ * objects which have the same name. The user is expected to destroy the
  * struct xcursor_images objects passed to the callback with
  * xcursor_images_destroy().
  *

@@ -2074,7 +2074,7 @@ wl_log_set_handler_server(wl_log_func_t handler)
  * \param func The function to call to log a new protocol message
  * \param user_data The user data pointer to pass to \a func
  *
- * \return The protol logger object on success, NULL on failure.
+ * \return The protocol logger object on success, NULL on failure.
  *
  * \sa wl_protocol_logger_destroy
  *
