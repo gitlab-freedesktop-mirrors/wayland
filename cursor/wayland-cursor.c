@@ -68,11 +68,16 @@ shm_pool_create(struct wl_shm *shm, int size)
 		goto err_close;
 
 	pool->pool = wl_shm_create_pool(shm, pool->fd, size);
+	if (!pool->pool)
+		goto err_unmap;
+
 	pool->size = size;
 	pool->used = 0;
 
 	return pool;
 
+err_unmap:
+	munmap(pool->data, size);
 err_close:
 	close(pool->fd);
 err_free:
