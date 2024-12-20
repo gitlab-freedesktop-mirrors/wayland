@@ -195,12 +195,14 @@ tests = {
 
 foreach test_name, test_extras : tests
 	test_extra_sources = test_extras.get('extra_sources', [])
+	test_runtime_deps = test_extras.get('runtime_deps', [])
 	test_sources = [ test_name + '.c' ] + test_extra_sources
 	test_deps = [test_runner_dep, epoll_dep]
 	bin = executable(test_name, test_sources, dependencies: test_deps)
 	test(
 		test_name,
 		bin,
+		depends: test_runtime_deps,
 		env: [
 			'TEST_SRC_DIR=@0@'.format(meson.current_source_dir()),
 			'TEST_BUILD_DIR=@0@'.format(meson.current_build_dir()),
