@@ -54,7 +54,7 @@ tests_protocol_c = custom_target(
 	output: 'tests-protocol.c'
 )
 
-executable(
+exec_fd_leak_checker = executable(
 	'exec-fd-leak-checker',
 	'exec-fd-leak-checker.c',
 	dependencies: test_runner_dep
@@ -129,6 +129,7 @@ tests = {
 			wayland_client_protocol_h,
 			wayland_server_protocol_h,
 		],
+		'runtime_deps': [ exec_fd_leak_checker ],
 	},
 	'socket-test': {
 		'extra_sources': [
@@ -183,7 +184,9 @@ tests = {
 			'headers-protocol-core-test.c',
 		],
 	},
-	'os-wrappers-test': {},
+	'os-wrappers-test': {
+		'runtime_deps': [ exec_fd_leak_checker ],
+	},
 	'proxy-test': {
 		'extra_sources': [
 			wayland_client_protocol_h,
