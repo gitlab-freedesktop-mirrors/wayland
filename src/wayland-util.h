@@ -635,7 +635,7 @@ wl_fixed_to_double(wl_fixed_t f)
 static inline wl_fixed_t
 wl_fixed_from_double(double d)
 {
-	return (wl_fixed_t) (d * 256.0);
+	return (wl_fixed_t) (round(d * 256.0));
 }
 
 /**
