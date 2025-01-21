@@ -501,8 +501,10 @@
     <event name="release">
       <description summary="compositor releases buffer">
 	Sent when this wl_buffer is no longer used by the compositor.
-	The client is now free to reuse or destroy this buffer and its
-	backing storage.
+
+	For more information on when release events may or may not be sent,
+	and what consequences it has, please see the description of
+	wl_surface.attach.
 
 	If a client receives a release event before the frame callback
 	requested in the same wl_surface.commit that attaches this
