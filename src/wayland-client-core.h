@@ -27,13 +27,14 @@
 #define WAYLAND_CLIENT_CORE_H
 
 #include <stdint.h>
-#include <time.h>
 #include "wayland-util.h"
 #include "wayland-version.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+struct timespec;
 
 /** \class wl_proxy
  *
