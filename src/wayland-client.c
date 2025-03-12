@@ -674,6 +674,9 @@ wl_proxy_add_listener(struct wl_proxy *proxy,
  * This function is useful in clients with multiple listeners on the same
  * interface to allow the identification of which code to execute.
  *
+ * If \ref wl_proxy_add_dispatcher was used, this function returns the
+ * dispatcher_data pointer instead.
+ *
  * \memberof wl_proxy
  */
 WL_EXPORT const void *
