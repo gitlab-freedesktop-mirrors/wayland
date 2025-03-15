@@ -1506,7 +1506,8 @@
 	the delivery of wl_buffer.release events becomes undefined. A well
 	behaved client should not rely on wl_buffer.release events in this
 	case. Alternatively, a client could create multiple wl_buffer objects
-	from the same backing storage or use wp_linux_buffer_release.
+	from the same backing storage or use a protocol extension providing
+	per-commit release notifications.
 
 	Destroying the wl_buffer after wl_buffer.release does not change
 	the surface contents. Destroying the wl_buffer before wl_buffer.release
