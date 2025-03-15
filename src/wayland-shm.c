@@ -509,8 +509,8 @@ wl_shm_buffer_get_stride(const struct wl_shm_buffer *buffer)
  * SIGBUS signals. This can happen if the client claims that the
  * buffer is larger than it is or if something truncates the
  * underlying file. To prevent this signal from causing the compositor
- * to crash you should call wl_shm_buffer_begin_access and
- * wl_shm_buffer_end_access around code that reads from the memory.
+ * to crash you should call wl_shm_buffer_begin_access() and
+ * wl_shm_buffer_end_access() around code that reads from the memory.
  *
  * \memberof wl_shm_buffer
  */
@@ -700,7 +700,7 @@ init_sigbus_data_key(void)
  * In order to make the compositor robust against clients that change
  * the size of the underlying file or lie about its size, you should
  * protect access to the buffer by calling this function before
- * reading from the memory and call wl_shm_buffer_end_access
+ * reading from the memory and call wl_shm_buffer_end_access()
  * afterwards. This will install a signal handler for SIGBUS which
  * will prevent the compositor from crashing.
  *
@@ -711,15 +711,15 @@ init_sigbus_data_key(void)
  *
  * If a SIGBUS signal is received for an address within the range of
  * the SHM pool of the given buffer then the client will be sent an
- * error event when wl_shm_buffer_end_access is called. If the signal
+ * error event when wl_shm_buffer_end_access() is called. If the signal
  * is for an address outside that range then the signal handler will
  * reraise the signal which would will likely cause the compositor to
  * terminate.
  *
  * It is safe to nest calls to these functions as long as the nested
  * calls are all accessing the same pool. The number of calls to
- * wl_shm_buffer_end_access must match the number of calls to
- * wl_shm_buffer_begin_access. These functions are thread-safe and it
+ * wl_shm_buffer_end_access() must match the number of calls to
+ * wl_shm_buffer_begin_access(). These functions are thread-safe and it
  * is allowed to simultaneously access different buffers or the same
  * buffer from multiple threads.
  *
@@ -753,11 +753,11 @@ wl_shm_buffer_begin_access(struct wl_shm_buffer *buffer)
 	sigbus_data->access_count++;
 }
 
-/** Ends the access to a buffer started by wl_shm_buffer_begin_access
+/** Ends the access to a buffer started by wl_shm_buffer_begin_access()
  *
  * \param buffer The SHM buffer
  *
- * This should be called after wl_shm_buffer_begin_access once the
+ * This should be called after wl_shm_buffer_begin_access() once the
  * buffer is no longer being accessed. If a SIGBUS signal was
  * generated in-between these two calls then the resource for the
  * given buffer will be sent an error.
