@@ -717,7 +717,7 @@ init_sigbus_data_key(void)
  * terminate.
  *
  * It is safe to nest calls to these functions as long as the nested
- * calls are all accessing the same buffer. The number of calls to
+ * calls are all accessing the same pool. The number of calls to
  * wl_shm_buffer_end_access must match the number of calls to
  * wl_shm_buffer_begin_access. These functions are thread-safe and it
  * is allowed to simultaneously access different buffers or the same
