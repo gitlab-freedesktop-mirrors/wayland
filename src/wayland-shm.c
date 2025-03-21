@@ -86,6 +86,8 @@ struct wl_shm_buffer {
 	struct wl_resource *resource;
 	int internal_refcount;
 	int external_refcount;
+	struct wl_client *client;
+	struct wl_listener client_destroy_listener;
 	int32_t width, height;
 	int32_t stride;
 	uint32_t format;
@@ -187,6 +189,8 @@ shm_buffer_unref(struct wl_shm_buffer *buffer, bool external)
 	if (buffer->internal_refcount + buffer->external_refcount > 0)
 		return;
 
+	if (buffer->client)
+		wl_list_remove(&buffer->client_destroy_listener.link);
 	shm_pool_unref(buffer->pool, false);
 	free(buffer);
 }
@@ -230,6 +234,17 @@ format_is_supported(struct wl_client *client, uint32_t format)
 	return false;
 }
 
+
+static void
+shm_buffer_client_destroy_notify(struct wl_listener *listener, void *data)
+{
+	struct wl_shm_buffer *buffer =
+		wl_container_of(listener, buffer, client_destroy_listener);
+
+	buffer->client = NULL;
+	wl_list_remove(&buffer->client_destroy_listener.link);
+}
+
 static void
 shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resource,
 		       uint32_t id, int32_t offset,
@@ -261,6 +276,12 @@ shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resource,
 		wl_client_post_no_memory(client);
 		return;
 	}
+
+	buffer->client = client;
+	buffer->client_destroy_listener.notify =
+		shm_buffer_client_destroy_notify;
+	wl_client_add_destroy_listener(buffer->client,
+				       &buffer->client_destroy_listener);
 
 	buffer->internal_refcount = 1;
 	buffer->external_refcount = 0;
@@ -763,6 +784,11 @@ wl_shm_buffer_end_access(struct wl_shm_buffer *buffer)
 				wl_resource_post_error(buffer->resource,
 						       WL_SHM_ERROR_INVALID_FD,
 						       "error accessing SHM buffer");
+			} else if (buffer->client) {
+				wl_client_post_implementation_error(buffer->client,
+								    "Error accessing SHM buffer of a "
+								    "wl_buffer resource which has "
+								    "already been destroyed");
 			}
 			sigbus_data->fallback_mapping_used = 0;
 		}
