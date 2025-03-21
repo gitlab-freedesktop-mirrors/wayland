@@ -84,6 +84,8 @@ struct wl_shm_pool {
  */
 struct wl_shm_buffer {
 	struct wl_resource *resource;
+	int internal_refcount;
+	int external_refcount;
 	int32_t width, height;
 	int32_t stride;
 	uint32_t format;
@@ -166,12 +168,35 @@ shm_pool_unref(struct wl_shm_pool *pool, bool external)
 }
 
 static void
+shm_buffer_unref(struct wl_shm_buffer *buffer, bool external)
+{
+	if (external) {
+		buffer->external_refcount--;
+		if (buffer->external_refcount < 0) {
+			wl_abort("Requested to unref an external reference to "
+				 "buffer but none found\n");
+		}
+	} else {
+		buffer->internal_refcount--;
+		if (buffer->internal_refcount < 0) {
+			wl_abort("Requested to unref an internal reference to "
+				 "buffer but none found\n");
+		}
+	}
+
+	if (buffer->internal_refcount + buffer->external_refcount > 0)
+		return;
+
+	shm_pool_unref(buffer->pool, false);
+	free(buffer);
+}
+
+static void
 destroy_buffer(struct wl_resource *resource)
 {
 	struct wl_shm_buffer *buffer = wl_resource_get_user_data(resource);
 
-	shm_pool_unref(buffer->pool, false);
-	free(buffer);
+	shm_buffer_unref(buffer, false);
 }
 
 static void
@@ -237,6 +262,8 @@ shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resource,
 		return;
 	}
 
+	buffer->internal_refcount = 1;
+	buffer->external_refcount = 0;
 	buffer->width = width;
 	buffer->height = height;
 	buffer->format = format;
@@ -495,6 +522,45 @@ wl_shm_buffer_get_height(const struct wl_shm_buffer *buffer)
 	return buffer->height;
 }
 
+/** Reference a shm_buffer
+ *
+ * \param buffer The buffer object
+ *
+ * Returns a pointer to the buffer and increases the refcount.
+ *
+ * The compositor must remember to call wl_shm_buffer_unref() when
+ * it no longer needs the reference to ensure proper destruction
+ * of the buffer.
+ *
+ * \memberof wl_shm_buffer
+ * \sa wl_shm_buffer_unref
+ */
+WL_EXPORT struct wl_shm_buffer *
+wl_shm_buffer_ref(struct wl_shm_buffer *buffer)
+{
+	buffer->external_refcount++;
+	return buffer;
+}
+
+/** Unreference a shm_buffer
+ *
+ * \param buffer The buffer object
+ *
+ * Drops a reference to a buffer object.
+ *
+ * This is only necessary if the compositor has explicitly
+ * taken a reference with wl_shm_buffer_ref(), otherwise
+ * the buffer will be automatically destroyed when appropriate.
+ *
+ * \memberof wl_shm_buffer
+ * \sa wl_shm_buffer_ref
+ */
+WL_EXPORT void
+wl_shm_buffer_unref(struct wl_shm_buffer *buffer)
+{
+	shm_buffer_unref(buffer, true);
+}
+
 /** Get a reference to a shm_buffer's shm_pool
  *
  * \param buffer The buffer object
@@ -693,9 +759,11 @@ wl_shm_buffer_end_access(struct wl_shm_buffer *buffer)
 
 	if (--sigbus_data->access_count == 0) {
 		if (sigbus_data->fallback_mapping_used) {
-			wl_resource_post_error(buffer->resource,
-					       WL_SHM_ERROR_INVALID_FD,
-					       "error accessing SHM buffer");
+			if (buffer->resource) {
+				wl_resource_post_error(buffer->resource,
+						       WL_SHM_ERROR_INVALID_FD,
+						       "error accessing SHM buffer");
+			}
 			sigbus_data->fallback_mapping_used = 0;
 		}
 

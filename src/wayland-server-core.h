@@ -666,6 +666,12 @@ wl_shm_buffer_get_width(const struct wl_shm_buffer *buffer);
 int32_t
 wl_shm_buffer_get_height(const struct wl_shm_buffer *buffer);
 
+struct wl_shm_buffer *
+wl_shm_buffer_ref(struct wl_shm_buffer *buffer);
+
+void
+wl_shm_buffer_unref(struct wl_shm_buffer *buffer);
+
 struct wl_shm_pool *
 wl_shm_buffer_ref_pool(struct wl_shm_buffer *buffer);
 
