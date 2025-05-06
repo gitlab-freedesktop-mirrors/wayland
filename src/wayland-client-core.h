@@ -221,6 +221,9 @@ wl_proxy_get_tag(struct wl_proxy *proxy);
 const char *
 wl_proxy_get_class(struct wl_proxy *proxy);
 
+const struct wl_interface *
+wl_proxy_get_interface(struct wl_proxy *proxy);
+
 struct wl_display *
 wl_proxy_get_display(struct wl_proxy *proxy);
 

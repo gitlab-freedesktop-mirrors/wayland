@@ -2513,6 +2513,20 @@ wl_proxy_get_class(struct wl_proxy *proxy)
 	return proxy->object.interface->name;
 }
 
+/** Get the interface of a proxy object
+ *
+ * \param proxy The proxy object
+ * \return The interface of the object associated with the proxy
+ *
+ * \memberof wl_proxy
+ * \since 1.24
+ */
+WL_EXPORT const struct wl_interface *
+wl_proxy_get_interface(struct wl_proxy *proxy)
+{
+	return proxy->object.interface;
+}
+
 /** Get the display of a proxy object
  *
  * \param proxy The proxy object
