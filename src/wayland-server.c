@@ -905,6 +905,20 @@ wl_resource_get_class(const struct wl_resource *resource)
 	return resource->object.interface->name;
 }
 
+/** Get the interface of a resource object
+ *
+ * \param resource The resource object
+ * \return The interface of the object associated with the resource
+ *
+ * \memberof wl_resource
+ * \since 1.24
+ */
+WL_EXPORT const struct wl_interface *
+wl_resource_get_interface(struct wl_resource *resource)
+{
+	return resource->object.interface;
+}
+
 /**
  * Add a listener to be called at the beginning of wl_client destruction
  *

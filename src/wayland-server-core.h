@@ -621,6 +621,9 @@ wl_resource_instance_of(struct wl_resource *resource,
 const char *
 wl_resource_get_class(const struct wl_resource *resource);
 
+const struct wl_interface *
+wl_resource_get_interface(struct wl_resource *resource);
+
 void
 wl_resource_add_destroy_listener(struct wl_resource *resource,
 				 struct wl_listener *listener);
