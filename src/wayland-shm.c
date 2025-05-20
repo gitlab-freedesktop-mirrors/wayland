@@ -503,7 +503,7 @@ wl_shm_buffer_get_height(const struct wl_shm_buffer *buffer)
  * Returns a pointer to a buffer's shm_pool and increases the
  * shm_pool refcount.
  *
- * The compositor must remember to call wl_shm_pool_unref when
+ * The compositor must remember to call wl_shm_pool_unref() when
  * it no longer needs the reference to ensure proper destruction
  * of the pool.
  *
