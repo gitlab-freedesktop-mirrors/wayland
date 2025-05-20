@@ -143,17 +143,16 @@ shm_pool_unref(struct wl_shm_pool *pool, bool external)
 {
 	if (external) {
 		pool->external_refcount--;
-		if (!(pool->external_refcount >= 0))
+		if (pool->external_refcount < 0)
 			wl_abort("Requested to unref an external reference to "
 				 "pool but none found\n");
 		if (pool->external_refcount == 0)
 			shm_pool_finish_resize(pool);
 	} else {
 		pool->internal_refcount--;
-		if (!(pool->internal_refcount >= 0))
+		if (pool->internal_refcount < 0)
 			wl_abort("Requested to unref an internal reference to "
 				 "pool but none found\n");
-
 	}
 
 	if (pool->internal_refcount + pool->external_refcount > 0)
@@ -513,10 +512,6 @@ wl_shm_buffer_get_height(const struct wl_shm_buffer *buffer)
 WL_EXPORT struct wl_shm_pool *
 wl_shm_buffer_ref_pool(struct wl_shm_buffer *buffer)
 {
-	if (!(buffer->pool->internal_refcount +
-	       buffer->pool->external_refcount))
-		wl_abort("Can't get reference to pool that has been freed\n");
-
 	buffer->pool->external_refcount++;
 	return buffer->pool;
 }
