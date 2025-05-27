@@ -1229,6 +1229,11 @@ wl_closure_invoke(struct wl_closure *closure, uint32_t flags,
 		     count + 2, &ffi_type_void, ffi_types);
 
 	implementation = target->implementation;
+	if (!implementation) {
+		wl_abort("Implementation of resource %d of %s is NULL\n",
+			  target->id, target->interface->name);
+	}
+
 	if (!implementation[opcode]) {
 		wl_abort("listener function for opcode %u of %s is NULL\n",
 			 opcode, target->interface->name);
