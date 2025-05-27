@@ -1494,7 +1494,7 @@ wl_closure_queue(struct wl_closure *closure, struct wl_connection *connection)
 void
 wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 		 int send, int discarded, uint32_t (*n_parse)(union wl_argument *arg),
-		 const char *queue_name)
+		 const char *queue_name, int color)
 {
 	int i;
 	struct argument_details arg;
@@ -1512,17 +1512,28 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 
 	clock_gettime(CLOCK_REALTIME, &tp);
 	time = (tp.tv_sec * 1000000L) + (tp.tv_nsec / 1000);
+	fprintf(f, "%s[%7u.%03u] ",
+		color ? WL_DEBUG_COLOR_GREEN : "",
+		time / 1000, time % 1000);
 
-	fprintf(f, "[%7u.%03u] ", time / 1000, time % 1000);
+	if (queue_name) {
+		fprintf(f, "%s{%s} ",
+			color ? WL_DEBUG_COLOR_YELLOW : "",
+			queue_name);
+	}
 
-	if (queue_name)
-		fprintf(f, "{%s} ", queue_name);
-
-	fprintf(f, "%s%s%s#%u.%s(",
+	fprintf(f, "%s%s%s%s%s%s%s#%u%s.%s%s(",
+		color ? WL_DEBUG_COLOR_RED : "",
 		discarded ? "discarded " : "",
+		color ? WL_DEBUG_COLOR_RESET : "",
 		send ? " -> " : "",
-		target->interface->name, target->id,
-		closure->message->name);
+		color ? WL_DEBUG_COLOR_BLUE : "",
+		target->interface->name,
+		color ? WL_DEBUG_COLOR_MAGENTA : "",
+		target->id,
+		color ? WL_DEBUG_COLOR_CYAN : "",
+		closure->message->name,
+		color ? WL_DEBUG_COLOR_RESET : "");
 
 	for (i = 0; i < closure->count; i++) {
 		signature = get_next_argument(signature, &arg);
@@ -1587,7 +1598,7 @@ wl_closure_print(struct wl_closure *closure, struct wl_object *target,
 		}
 	}
 
-	fprintf(f, ")\n");
+	fprintf(f, ")%s\n", color ? WL_DEBUG_COLOR_RESET : "");
 
 	if (fclose(f) == 0) {
 		fprintf(stderr, "%s", buffer);

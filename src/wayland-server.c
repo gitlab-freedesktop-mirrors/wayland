@@ -149,6 +149,7 @@ struct wl_protocol_logger {
 };
 
 static int debug_server = 0;
+static int debug_color = 0;
 
 static void
 log_closure(struct wl_resource *resource,
@@ -160,7 +161,7 @@ log_closure(struct wl_resource *resource,
 	struct wl_protocol_logger_message message;
 
 	if (debug_server)
-		wl_closure_print(closure, object, send, false, NULL, NULL);
+		wl_closure_print(closure, object, send, false, NULL, NULL, debug_color);
 
 	if (!wl_list_empty(&display->protocol_loggers)) {
 		message.resource = resource;
@@ -1168,10 +1169,23 @@ wl_display_create(void)
 {
 	struct wl_display *display;
 	const char *debug;
+	const char *no_color;
+	const char *force_color;
 
+	no_color = getenv("NO_COLOR");
+	force_color = getenv("FORCE_COLOR");
 	debug = getenv("WAYLAND_DEBUG");
-	if (debug && (strstr(debug, "server") || strstr(debug, "1")))
+	if (debug && (strstr(debug, "server") || strstr(debug, "1"))) {
 		debug_server = 1;
+		if (isatty(fileno(stderr)))
+			debug_color = 1;
+	}
+
+	if (force_color && force_color[0] != '\0')
+		debug_color = 1;
+
+	if (no_color && no_color[0] != '\0')
+		debug_color = 0;
 
 	display = zalloc(sizeof *display);
 	if (display == NULL)

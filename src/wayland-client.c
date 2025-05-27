@@ -115,6 +115,7 @@ struct wl_display {
 /** \endcond */
 
 static int debug_client = 0;
+static int debug_color = 0;
 
 /**
  * This helper function wakes up all threads that are
@@ -936,7 +937,7 @@ wl_proxy_marshal_array_flags(struct wl_proxy *proxy, uint32_t opcode,
 			queue_name = wl_event_queue_get_name(queue);
 
 		wl_closure_print(closure, &proxy->object, true, false, NULL,
-				 queue_name);
+				 queue_name, debug_color);
 	}
 
 	if (wl_closure_send(closure, proxy->display->connection)) {
@@ -1229,10 +1230,23 @@ wl_display_connect_to_fd(int fd)
 {
 	struct wl_display *display;
 	const char *debug;
+	const char *no_color;
+	const char *force_color;
 
+	no_color = getenv("NO_COLOR");
+	force_color = getenv("FORCE_COLOR");
 	debug = getenv("WAYLAND_DEBUG");
-	if (debug && (strstr(debug, "client") || strstr(debug, "1")))
+	if (debug && (strstr(debug, "client") || strstr(debug, "1"))) {
 		debug_client = 1;
+		if (isatty(fileno(stderr)))
+			debug_color = 1;
+	}
+
+	if (force_color && force_color[0] != '\0')
+		debug_color = 1;
+
+	if (no_color && no_color[0] != '\0')
+		debug_color = 0;
 
 	display = zalloc(sizeof *display);
 	if (display == NULL) {
@@ -1578,12 +1592,16 @@ queue_event(struct wl_display *display, int len)
 		if (debug_client) {
 			clock_gettime(CLOCK_REALTIME, &tp);
 			time = (tp.tv_sec * 1000000L) + (tp.tv_nsec / 1000);
-
-			fprintf(stderr, "[%7u.%03u] discarded [%s]#%d.[event %d]"
+			fprintf(stderr, "%s[%7u.%03u] %sdiscarded %s[%s]%s#%d%s.[event %d]%s"
 				"(%d fd, %d byte)\n",
+				debug_color ? WL_DEBUG_COLOR_GREEN : "",
 				time / 1000, time % 1000,
+				debug_color ? WL_DEBUG_COLOR_RED : "",
+				debug_color ? WL_DEBUG_COLOR_BLUE : "",
 				zombie ? "zombie" : "unknown",
-				id, opcode,
+				debug_color ? WL_DEBUG_COLOR_MAGENTA : "", id,
+				debug_color ? WL_DEBUG_COLOR_BLUE : "", opcode,
+				debug_color ? WL_DEBUG_COLOR_RESET : "",
 				num_zombie_fds, size);
 		}
 		if (num_zombie_fds > 0)
@@ -1668,7 +1686,7 @@ dispatch_event(struct wl_display *display, struct wl_event_queue *queue)
 				 !(proxy->dispatcher || proxy->object.implementation);
 
 		wl_closure_print(closure, &proxy->object, false, discarded,
-				 id_from_object, queue->name);
+				 id_from_object, queue->name, debug_color);
 	}
 
 	if (proxy_destroyed) {
