@@ -1579,7 +1579,7 @@ queue_event(struct wl_display *display, int len)
 			clock_gettime(CLOCK_REALTIME, &tp);
 			time = (tp.tv_sec * 1000000L) + (tp.tv_nsec / 1000);
 
-			fprintf(stderr, "[%7u.%03u] discarded [%s]#%d.[event %d]"
+			fprintf(stderr, "[%7u.%03u] discarded [%s]#%u.[event %d]"
 				"(%d fd, %d byte)\n",
 				time / 1000, time % 1000,
 				zombie ? "zombie" : "unknown",
