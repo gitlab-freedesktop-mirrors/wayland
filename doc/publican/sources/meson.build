@@ -54,6 +54,7 @@ publican_sources = [
 	'Protocol.xml',
 	'Xwayland.xml',
 	'Compositors.xml',
+	'Color.xml',
 	'Client.xml',
 	'Server.xml'
 ]
